@@ -146,6 +146,16 @@ input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-s
       <div class="sec-title">안경</div>
       <input type="color" id="glassColor" value="#00e1ff" style="width:100%;height:30px;border:1px solid var(--line-soft);border-radius:2px;background:var(--panel2);cursor:pointer;padding:2px">
     </div>
+    <div class="sec">
+      <div class="sec-title">물리 시뮬</div>
+      <button class="tb" id="physBtn" disabled><span class="ic">&#x25CF;</span>물리 ON/OFF</button>
+      <button class="tb" id="physResetBtn"><span class="ic">&#x21BB;</span>물리 리셋</button>
+      <button class="tb" id="gaitDemoBtn"><span class="ic">&#x1F463;</span>보행 예제 생성</button>
+      <div class="info-row"><span>엔진</span><span class="info-val" id="physEngine">로딩중</span></div>
+      <div class="info-row"><span>상태</span><span class="info-val" id="physState">OFF</span></div>
+      <div class="info-row"><span>기울기</span><span class="info-val" id="physTilt">-</span></div>
+      <div class="info-row"><span>이동거리</span><span class="info-val" id="physDist">-</span></div>
+    </div>
     <div class="sec" id="infoSec" style="display:none">
       <div class="sec-title">정보</div>
       <div id="infoRows"></div>
@@ -168,6 +178,7 @@ input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-s
       <span id="fpsEl">FPS: --</span>
       <span style="color:#B0B7BE">좌:회전 &nbsp; 우:이동 &nbsp; 휠:줌</span>
     </div>
+    <div id="fallBanner" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#B33;color:#fff;padding:6px 18px;border-radius:2px;font-size:12px;font-weight:700;letter-spacing:.1em;display:none;pointer-events:none">넘어졌습니다</div>
     <div class="tooltip" id="tt"></div>
   </div>
 
@@ -413,6 +424,7 @@ function renderLoop(now){
     playLastT=now;
     applyAtTime(currentTime);
   }
+  if(typeof PHYS!=='undefined' && PHYS.on) PHYS.step(now);
   renderer.render(scene,camera);
   drawTimeline();
   document.getElementById('tlTimeDisp').textContent=currentTime.toFixed(2)+'s';
@@ -612,6 +624,7 @@ function fmtVal(jname,v){
 
 // ★ 조인트 적용: revolute 회전에 ZERO_OFFSET 추가 (어깨 0=앞으로 나란히)
 function setJointValue(jname,v){
+  if(typeof PHYS!=='undefined' && PHYS.on) return;   // 물리 모드: 슬라이더는 '목표각'일 뿐, 자세는 물리가 결정
   const jobj=jointObjs[jname],jdef=jointDefs[jname];if(!jobj||!jdef)return;
   const ax=new THREE.Vector3(...jdef.axis).normalize();
   if(jdef.type==='prismatic'){
@@ -903,6 +916,247 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 // 페이지 열리면 data/에서 자동 로드 (실패시 업로드 UI로 폴백)
 if(AUTOLOAD) window.addEventListener('load',autoLoadFromData);
+
+// ═══════════════════════════════════════════════════════════
+// PHYSICS (Rapier3D)  ★ 질량/충돌박스는 여기 표 하나만 고치면 됨 ★
+// ═══════════════════════════════════════════════════════════
+// m  = 질량(kg)  |  c = 박스 중심(링크 좌표계, m)  |  s = 박스 크기(m)  |  fr = 마찰
+// 실물 PIBO 총 2.0kg / DS3115MG 서보 60g x10 을 장착 위치에 반영
+const PHYS_LINKS = {
+  base_link:       {m:1.02, c:[ 0.000, 0.000, 0.165], s:[0.090,0.070,0.135], fr:0.5},
+  head_pan_link:   {m:0.10, c:[ 0.000, 0.000, 0.020], s:[0.040,0.040,0.050], fr:0.5},
+  head_link:       {m:0.20, c:[ 0.000, 0.000, 0.035], s:[0.095,0.095,0.085], fr:0.5},
+  shoulder_l_link: {m:0.10, c:[ 0.019, 0.000,-0.013], s:[0.048,0.045,0.050], fr:0.5},
+  arm_l_link:      {m:0.05, c:[ 0.020, 0.000,-0.030], s:[0.038,0.038,0.080], fr:0.5},
+  shoulder_r_link: {m:0.10, c:[-0.019, 0.000,-0.013], s:[0.048,0.045,0.050], fr:0.5},
+  arm_r_link:      {m:0.05, c:[-0.020, 0.000,-0.030], s:[0.038,0.038,0.080], fr:0.5},
+  leg_l_link:      {m:0.11, c:[ 0.001,-0.003,-0.036], s:[0.042,0.048,0.078], fr:0.5},
+  leg_r_link:      {m:0.11, c:[-0.001,-0.003,-0.036], s:[0.042,0.048,0.078], fr:0.5},
+  // 발바닥이 지면과 닿는 유일한 부분 → 마찰 높게
+  foot_l_link:     {m:0.08, c:[ 0.000, 0.005,-0.0198], s:[0.050,0.085,0.038], fr:1.1},
+  foot_r_link:     {m:0.08, c:[ 0.000, 0.005,-0.0198], s:[0.050,0.085,0.038], fr:1.1},
+};
+// 서보 모델 (DS3115MG: 스톨 1.47N·m / 7.48rad/s — 토크 여유가 3배라 위치추종 PD로 근사)
+// 강성 30 N·m/rad → 약 2.8도 오차에서 1.47N·m(DS3115MG 스톨)에 도달. 실물 토크한계와 근사 일치.
+const MOTOR_STIFFNESS = 30;    // 낮추면 흐물흐물, 높이면 뻣뻣
+const MOTOR_DAMPING   = 1.5;
+const SOLVER_ITERS    = 8;
+const LENGTH_UNIT     = 0.1;   // 로봇이 30cm급이라 Rapier에 '작은 물체'임을 알려줌 (안정성 ↑)
+const FALL_TILT_DEG   = 45;    // 몸통이 이 각도 넘게 기울면 '넘어짐'
+const GROUND_FRICTION = 1.1;
+const PHYS_DT         = 1/240; // 물리 스텝 (작을수록 안정, 느림)
+
+window.PHYS = {
+  on:false, ready:false, world:null,
+  bodies:{}, joints:{}, acc:0, tilt:0, fallen:false,
+  startXZ:null, rest:null,
+  _tmpQ1:null,_tmpQ2:null,
+
+  init(){
+    this._tmpQ1=new THREE.Quaternion(); this._tmpQ2=new THREE.Quaternion();
+    this.ready=true;
+    const b=document.getElementById('physBtn'); b.disabled=false;
+    document.getElementById('physEngine').textContent='Rapier';
+  },
+
+  // ── 물리 세계 구축 (현재 화면 자세 그대로) ──
+  build(){
+    if(!robotRoot){alert('로봇을 먼저 로드하세요');return false;}
+    const R=window.RAPIER;
+    this.world=new R.World({x:0,y:-9.81,z:0});
+    this.world.timestep=PHYS_DT;
+    try{
+      this.world.integrationParameters.numSolverIterations=SOLVER_ITERS;
+      this.world.integrationParameters.lengthUnit=LENGTH_UNIT;
+    }catch(e){ console.warn('integrationParameters 설정 실패',e); }
+
+    // 바닥
+    const gb=this.world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(0,-0.5,0));
+    const gc=R.ColliderDesc.cuboid(10,0.5,10).setFriction(GROUND_FRICTION).setRestitution(0);
+    gc.setCollisionGroups(0x00010002);   // 그룹1, 그룹2(로봇)와만 충돌
+    this.world.createCollider(gc,gb);
+
+    // 현재 자세 저장 (물리 끌 때 되돌리기용)
+    this.rest={pos:robotRoot.position.clone(), quat:robotRoot.quaternion.clone()};
+
+    robotRoot.updateWorldMatrix(true,true);
+    this.bodies={}; this.joints={};
+
+    // 링크 → 강체
+    for(const lname in PHYS_LINKS){
+      const g=robotRoot.getObjectByName('link:'+lname);
+      if(!g){console.warn('link group not found:',lname);continue;}
+      const P=PHYS_LINKS[lname];
+      const p=new THREE.Vector3(), q=new THREE.Quaternion();
+      g.getWorldPosition(p); g.getWorldQuaternion(q);
+      const rb=this.world.createRigidBody(
+        R.RigidBodyDesc.dynamic()
+         .setTranslation(p.x,p.y,p.z)
+         .setRotation({x:q.x,y:q.y,z:q.z,w:q.w})
+         .setLinearDamping(0.05).setAngularDamping(0.15)
+      );
+      const vol=P.s[0]*P.s[1]*P.s[2];
+      const cd=R.ColliderDesc.cuboid(P.s[0]/2,P.s[1]/2,P.s[2]/2)
+        .setTranslation(P.c[0],P.c[1],P.c[2])
+        .setDensity(P.m/vol)
+        .setFriction(P.fr).setRestitution(0);
+      cd.setCollisionGroups(0x00020001); // 그룹2, 바닥(그룹1)과만 충돌 → 자기 몸끼리는 통과
+      this.world.createCollider(cd,rb);
+      this.bodies[lname]={rb, obj:g};
+    }
+
+    // 조인트 → revolute + 위치모터
+    for(const jn in jointDefs){
+      const jd=jointDefs[jn];
+      if(jd.type==='fixed') continue;
+      const pb=this.bodies[jd.parent], cb=this.bodies[jd.child];
+      if(!pb||!cb) continue;
+      const o=jd.origin.xyz, ax=new THREE.Vector3(...jd.axis).normalize();
+      const params=R.JointData.revolute(
+        {x:o[0],y:o[1],z:o[2]}, {x:0,y:0,z:0}, {x:ax.x,y:ax.y,z:ax.z});
+      try{ params.limitsEnabled=true; params.limits=[jd.limit.lower,jd.limit.upper]; }catch(e){}
+      const j=this.world.createImpulseJoint(params,pb.rb,cb.rb,true);
+      try{ j.setContactsEnabled(false); }catch(e){}
+      try{ j.configureMotorModel(R.MotorModel.ForceBased); }catch(e){console.warn('motor model',e);}
+      this.joints[jn]={j, ax, pb, cb, jobj:jointObjs[jn]};
+    }
+
+    const base=this.bodies['base_link'].rb.translation();
+    this.startXZ={x:base.x,z:base.z};
+    this.acc=0; this.fallen=false; this._last=undefined;
+    return true;
+  },
+
+  enable(){
+    if(!this.ready){alert('물리 엔진 로딩 중입니다');return;}
+    if(this.on) return;
+    if(!this.build()){ if(this.world){this.world.free();this.world=null;} return; }
+    this.on=true;
+    document.getElementById('physBtn').classList.add('on');
+    document.getElementById('physState').textContent='ON';
+  },
+
+  disable(){
+    if(!this.on) return;
+    this.on=false;
+    if(this.world){ this.world.free(); this.world=null; }
+    this.bodies={}; this.joints={};
+    // 화면을 원래 자세로 복원
+    if(robotRoot && this.rest){
+      robotRoot.position.copy(this.rest.pos);
+      robotRoot.quaternion.copy(this.rest.quat);
+    }
+    for(const jn in sliderEls) setJointValue(jn, parseFloat(sliderEls[jn].value));
+    document.getElementById('physBtn').classList.remove('on');
+    document.getElementById('physState').textContent='OFF';
+    document.getElementById('physTilt').textContent='-';
+    document.getElementById('physDist').textContent='-';
+    document.getElementById('fallBanner').style.display='none';
+  },
+
+  reset(){
+    const was=this.on;
+    this.disable();
+    if(was) this.enable();
+  },
+
+  // ── 매 프레임 ──
+  step(now){
+    if(!this.world) return;
+    const R=window.RAPIER;
+
+    // 1) 슬라이더(=목표각) → 모터 목표
+    for(const jn in this.joints){
+      const J=this.joints[jn];
+      const sl=sliderEls[jn]; if(!sl) continue;
+      const deg=parseFloat(sl.value)||0;
+      const target=(VIEWER_SIGN[jn]||1)*(deg*Math.PI/180)+(ZERO_OFFSET[jn]||0);
+      try{ J.j.configureMotorPosition(target, MOTOR_STIFFNESS, MOTOR_DAMPING); }catch(e){}
+    }
+
+    // 2) 물리 진행 (실시간 누적, 최대 8스텝)
+    if(this._last===undefined) this._last=now;
+    let dt=(now-this._last)/1000; this._last=now;
+    if(dt>0.1) dt=0.1;
+    this.acc+=dt;
+    let n=0;
+    while(this.acc>=PHYS_DT && n<8){ this.world.step(); this.acc-=PHYS_DT; n++; }
+    if(n===8) this.acc=0;
+
+    // 3) 물리 → 화면
+    const bb=this.bodies['base_link'];
+    const t=bb.rb.translation(), r=bb.rb.rotation();
+    robotRoot.position.set(t.x,t.y,t.z);
+    robotRoot.quaternion.set(r.x,r.y,r.z,r.w);
+
+    for(const jn in this.joints){
+      const J=this.joints[jn];
+      const rp=J.pb.rb.rotation(), rc=J.cb.rb.rotation();
+      this._tmpQ1.set(rp.x,rp.y,rp.z,rp.w).invert();
+      this._tmpQ2.set(rc.x,rc.y,rc.z,rc.w);
+      const qrel=this._tmpQ1.multiply(this._tmpQ2);
+      const sdot=qrel.x*J.ax.x+qrel.y*J.ax.y+qrel.z*J.ax.z;
+      const ang=2*Math.atan2(sdot, qrel.w);
+      if(J.jobj) J.jobj.quaternion.copy(baseQs[jn])
+        .multiply(new THREE.Quaternion().setFromAxisAngle(J.ax,ang));
+    }
+
+    // 4) 넘어짐 판정 — 로봇 로컬 +Z 가 월드 up
+    const up=new THREE.Vector3(0,0,1).applyQuaternion(robotRoot.quaternion);
+    this.tilt=Math.acos(Math.max(-1,Math.min(1,up.y)))*180/Math.PI;
+    const fell=this.tilt>FALL_TILT_DEG;
+    if(fell!==this.fallen){
+      this.fallen=fell;
+      document.getElementById('fallBanner').style.display=fell?'block':'none';
+      document.getElementById('physState').textContent=fell?'넘어짐':'ON';
+    }
+    document.getElementById('physTilt').textContent=this.tilt.toFixed(1)+'°';
+    const dx=t.x-this.startXZ.x, dz=t.z-this.startXZ.z;
+    document.getElementById('physDist').textContent=(Math.hypot(dx,dz)*1000).toFixed(0)+'mm';
+  },
+};
+
+// ── 검증된 뒤뚱 보행 예제 (8초에 약 350mm 전진) ──
+// 발목 롤로 좌우 체중이동 + 엉덩이 요(yaw)로 다리를 앞뒤로 스윙
+function makeDemoGait(){
+  if(!Object.keys(sliderEls).length){alert('로봇을 먼저 로드하세요');return;}
+  const T=1.0, DT=0.125, TOTAL=4.0;
+  keyframes=[]; kfIdCounter=0;
+  duration=TOTAL; document.getElementById('tlDurInput').value=TOTAL;
+  for(let t=0;t<=TOTAL+1e-6;t+=DT){
+    const ph=(t%T)/T;
+    const roll=18*Math.sin(2*Math.PI*ph);            // 발목 ±18도
+    const hip = 25*Math.sin(2*Math.PI*ph-Math.PI/2); // 엉덩이 ±25도 (90도 위상차)
+    const j={}; for(const jn in sliderEls) j[jn]=0;
+    j['ankle_l_joint']=roll; j['ankle_r_joint']=roll;
+    j['hip_l_joint']=hip;    j['hip_r_joint']=hip;
+    keyframes.push({id:++kfIdCounter, time:+t.toFixed(3), joints:j});
+  }
+  currentTime=0; selectedKfId=null;
+  loopMode=true; document.getElementById('tlLoopBtn').classList.add('on');
+  updateKfCount(); drawTimeline(); applyAtTime(0);
+}
+document.getElementById('gaitDemoBtn').addEventListener('click',makeDemoGait);
+document.getElementById('physBtn').addEventListener('click',()=>{ PHYS.on?PHYS.disable():PHYS.enable(); });
+document.getElementById('physResetBtn').addEventListener('click',()=>PHYS.reset());
+window.addEventListener('rapier-ready',()=>PHYS.init());
+window.addEventListener('rapier-fail',()=>{
+  document.getElementById('physEngine').textContent='실패';
+  document.getElementById('physBtn').title='Rapier 로드 실패 — 네트워크 확인';
+});
+
+</script>
+<script type="module">
+  // Rapier3D (wasm 내장 compat 빌드 — 별도 파일 필요 없음)
+  try{
+    const RAPIER = (await import('https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.14.0/+esm')).default;
+    await RAPIER.init();
+    window.RAPIER = RAPIER;
+    window.dispatchEvent(new Event('rapier-ready'));
+  }catch(e){
+    console.error('Rapier load failed', e);
+    window.dispatchEvent(new Event('rapier-fail'));
+  }
 </script>
 </body>
 </html>
