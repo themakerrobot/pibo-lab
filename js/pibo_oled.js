@@ -7,7 +7,7 @@ const Oled = (function () {
   const buf = document.createElement('canvas');
   buf.width = W; buf.height = H;
   const g = buf.getContext('2d');
-  let fontSize = 20, inverted = false, tex = null, attached = false;
+  let fontSize = 10, inverted = false   // 실물 openpibo Oled 기본 글씨 크기와 동일, tex = null, attached = false;
   // LCD 메시가 정사각형(28×27.5mm)에 가까운데 OLED 는 128×64(2:1) 이라
   // 그대로 입히면 세로로 2배 늘어난다. 화면 비율에 맞춘 캔버스에 레터박스로 얹는다.
   const disp = document.createElement('canvas');
@@ -57,7 +57,7 @@ const Oled = (function () {
   const paper = () => (inverted ? '#fff' : '#000');
 
   return {
-    setFont(size) { fontSize = Math.max(6, Math.min(H, Number(size) || 20)); },
+    setFont(size) { fontSize = Math.max(6, Math.min(H, Number(size) || 10)); },
 
     text(x, y, t) {
       g.fillStyle = ink();
@@ -97,6 +97,6 @@ const Oled = (function () {
 
     show() { push(); },
 
-    reset() { inverted = false; fontSize = 20; clearBuf(); push(); },
+    reset() { inverted = false; fontSize = 10; clearBuf(); push(); },
   };
 })();

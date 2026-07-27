@@ -144,6 +144,7 @@
 <script src="blockly/disable-top-blocks.js"></script>
 <script src="blockly/js-interpreter.js"></script>
 
+<script src="js/blockly_theme.js"></script>
 <script src="js/toolbox_sim.js"></script>
 <script src="js/generator_js.js"></script>
 <script src="js/blockly_run.js"></script>
@@ -151,21 +152,22 @@
 <script>
 // ── Blockly 워크스페이스 ──
 Blockly.setLocale && Blockly.setLocale(Blockly.Msg);
-const devWorkspace = Blockly.inject('blocklyDiv', {
-  toolbox: SIM_TOOLBOX,
-  grid: { spacing: 22, length: 3, colour: '#E3E6E8', snap: true },
-  zoom: { controls: true, wheel: true, startScale: 0.85, minScale: 0.3, maxScale: 3, scaleSpeed: 1.2, pinch: true },
-  trashcan: true,
-  collapse: true,
-  comments: true,
-  disable: true,          // 비활성 블록 표시 (아래 플러그인이 사용)
-  oneBasedIndex: true,    // 실물 IDE 와 같은 리스트 인덱스 규칙
-  sounds: false,
-  move: { scrollbars: true, drag: true, wheel: true },
-});
+// 실물 IDE 와 같은 테마 / 렌더러 / 옵션 (js/blockly_theme.js)
+const devWorkspace = Blockly.inject('blocklyDiv',
+  Object.assign({}, PIBO_BLOCKLY_OPTIONS, { toolbox: SIM_TOOLBOX, media: 'blockly/media/' }));
 
 // 실물 IDE 와 동일: '시작' 블록에 연결되지 않은 블록은 비활성 → 코드에도 안 들어간다
 if (typeof DisableTopBlocks === 'function') new DisableTopBlocks(devWorkspace).init();
+
+// '시작' 블록은 하나만 — 실물 IDE 와 동일하게 두 번째부터는 자동 삭제
+devWorkspace.addChangeListener(ev => {
+  if (ev.type !== Blockly.Events.CREATE) return;
+  const flags = devWorkspace.getAllBlocks(false).filter(b => b.type === 'flag_event');
+  if (flags.length > 1) {
+    const b = devWorkspace.getBlockById(ev.ids[0]);
+    if (b && b.type === 'flag_event') { b.dispose(); devLog("'시작' 블록은 하나만 쓸 수 있습니다.", 'warn'); }
+  }
+});
 const relayout = () => Blockly.svgResize(devWorkspace);
 window.addEventListener('resize', relayout);
 
