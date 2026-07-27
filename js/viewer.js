@@ -236,7 +236,8 @@ document.getElementById('lcdColor').addEventListener('input',function(){ lcdText
 // 안경 메시를 좌/우 두 그룹으로 나눈다.
 // head_glasses.stl 은 삼각형 13,406개가 X 부호로 깨끗하게 갈리고(중앙 걸침 4개뿐)
 // 좌우 대칭이라, 파일을 나누지 않고 런타임에 머티리얼 2개를 배정할 수 있다.
-// URDF 기준 +X = 로봇의 왼쪽 → 그룹 0 = 왼쪽 눈, 그룹 1 = 오른쪽 눈.
+// 실물 확인 결과 device.eye_on_s([left, right]) 의 left 는 -X 쪽이다.
+// → 그룹 0 = left 인자가 칠하는 눈(-X), 그룹 1 = right 인자가 칠하는 눈(+X).
 function splitGlassesLR(mesh){
   const geo = mesh.geometry, pos = geo.attributes.position;
   if(!pos || geo.index) return;                 // STL 파서는 비인덱스 지오메트리를 준다
@@ -245,7 +246,7 @@ function splitGlassesLR(mesh){
   const L = [], R = [];
   for(let t = 0; t < triCount; t++){
     const cx = (pos.getX(t*3) + pos.getX(t*3+1) + pos.getX(t*3+2)) / 3;
-    (cx >= 0 ? L : R).push(t);                  // +X = 로봇 왼쪽
+    (cx < 0 ? L : R).push(t);                   // -X = left 인자 쪽
   }
   if(!L.length || !R.length) return;            // 한쪽뿐이면 그냥 둔다
   const order = L.concat(R);
@@ -269,7 +270,7 @@ function splitGlassesLR(mesh){
   mesh.material = [glassMatL, glassMatR];
 }
 
-// 좌/우 눈 색. 한쪽만 주면 양쪽 다 같은 색.
+// left / right 는 실물 eye_on_s 인자와 같은 의미. 한쪽만 주면 양쪽 다 같은 색.
 function setGlassColor(left, right){
   if(right === undefined) right = left;
   if(glassMatL) glassMatL.color.set(left);
