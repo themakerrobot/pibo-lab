@@ -61,7 +61,8 @@
   <a class="db" href="index.html" style="text-decoration:none;color:inherit">&#x2190; 체험툴</a>
   <button class="db run" id="btnRun">▶ 실행</button>
   <button class="db stop" id="btnStop" disabled>■ 정지</button>
-  <button class="db" id="btnReset">↺ 리셋</button>
+  <button class="db" id="btnReset" title="관절·화면·물리를 처음 상태로">↺ 로봇 초기화</button>
+  <button class="db" id="btnClear" title="작업 중인 블록을 모두 지웁니다">🗑 블록 지우기</button>
   <span class="sp"></span>
   <button class="db" id="btnSave">💾 저장</button>
   <button class="db" id="btnLoad">📂 불러오기</button>
@@ -243,7 +244,7 @@ document.getElementById('btnReset').addEventListener('click', () => {
   for (const jn in sliderEls) { sliderEls[jn].value = 0; setJointValue(jn, 0); }
   Oled.reset();
   if (typeof PHYS !== 'undefined' && PHYS.on) PHYS.reset();
-  devLog('리셋');
+  devLog('로봇 초기화');
 });
 
 // ── 확대 / 축소 / 맞추기 ──
@@ -264,7 +265,60 @@ document.getElementById('themePick').addEventListener('change', function(){
   if(typeof setTheme === 'function') setTheme(this.value);
 });
 
-devLog('준비 완료 — 블록을 조립하고 ▶ 실행을 누르세요');
+// ── 작업 중인 블록 자동 보관 (탭을 닫으면 사라짐) ──
+// 실수로 새로고침해도 이어서 작업할 수 있게. 저장 형식은 파일 저장과 동일한 workspace JSON.
+const AUTOSAVE_KEY = 'pibo-dev-blocks-v1';
+let restoring = false;      // 복원 중에는 저장하지 않는다 (복원 이벤트가 저장을 다시 부르는 것 방지)
+let saveTimer = null;
+
+function autosave() {
+  if (restoring) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {                 // 드래그 중 매번 저장하지 않도록 지연
+    try {
+      const json = Blockly.serialization.workspaces.save(devWorkspace);
+      const empty = !json.blocks || !json.blocks.blocks || !json.blocks.blocks.length;
+      empty ? sessionStorage.removeItem(AUTOSAVE_KEY)
+            : sessionStorage.setItem(AUTOSAVE_KEY, JSON.stringify(json));
+    } catch (e) { /* 저장 실패는 조용히 넘어간다 */ }
+  }, 800);
+}
+
+function restoreBlocks() {
+  let raw;
+  try { raw = sessionStorage.getItem(AUTOSAVE_KEY); } catch (e) { return false; }
+  if (!raw) return false;
+  restoring = true;
+  try {
+    Blockly.serialization.workspaces.load(JSON.parse(raw), devWorkspace);
+    const n = devWorkspace.getAllBlocks(false).length;
+    devLog('이전에 하던 작업을 불러왔습니다 (블록 ' + n + '개). 새로 시작하려면 [블록 지우기]');
+    return true;
+  } catch (e) {
+    devLog('이전 작업을 복원하지 못했습니다: ' + e.message, 'warn');
+    try { sessionStorage.removeItem(AUTOSAVE_KEY); } catch (e2) {}
+    return false;
+  } finally {
+    restoring = false;
+    // 복원 도중 잠시 고아 상태였던 블록들의 활성/비활성을 다시 계산시킨다
+    devWorkspace.getAllBlocks(false).forEach(b => { delete b.userDisabled; });
+    devWorkspace.fireChangeListener(new Blockly.Events.BlockMove(devWorkspace.getTopBlocks(false)[0]));
+  }
+}
+
+document.getElementById('btnClear').addEventListener('click', () => {
+  if (devWorkspace.getAllBlocks(false).length && !confirm('작업 중인 블록을 모두 지울까요?')) return;
+  devStop();
+  devWorkspace.clear();
+  try { sessionStorage.removeItem(AUTOSAVE_KEY); } catch (e) {}
+  devLog('블록을 모두 지웠습니다');
+});
+
+const restored = restoreBlocks();
+devWorkspace.addChangeListener(ev => { if (!ev.isUiEvent) autosave(); });
+
+devLog(restored ? '준비 완료 — ▶ 실행을 누르세요'
+                : '준비 완료 — 블록을 조립하고 ▶ 실행을 누르세요');
 </script>
 
 <script type="module">
