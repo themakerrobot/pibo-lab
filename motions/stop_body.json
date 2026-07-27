@@ -1,0 +1,18 @@
+{
+ "stop_body": {
+  "comment": "stop body not head",
+  "init_def": 1,
+  "init": [
+   0,
+   0,
+   -80,
+   -25,
+   999,
+   999,
+   0,
+   0,
+   80,
+   25
+  ]
+ }
+}
