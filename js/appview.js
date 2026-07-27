@@ -19,7 +19,10 @@ const HAS_TIMELINE = !!(tlCanvas && tlWrap);
 function resizeTlCanvas(){ if(!HAS_TIMELINE) return; tlCanvas.width=tlWrap.clientWidth;tlCanvas.height=tlWrap.clientHeight;}
 if(HAS_TIMELINE){ resizeTlCanvas(); new ResizeObserver(resizeTlCanvas).observe(tlWrap); }
 function timeToX(t){return Math.round((t/duration)*tlCanvas.width);}
-function xToTime(x){let t=(x/tlCanvas.width)*duration; t=Math.round(t/0.5)*0.5; return Math.max(0,Math.min(duration,t));}
+const TL_SNAP=0.1;   // 키프레임이 붙는 최소 단위 (눈금선 간격과는 별개)
+function xToTime(x){let t=(x/tlCanvas.width)*duration; t=Math.round(t/TL_SNAP)*TL_SNAP;
+  t=Math.round(t*1000)/1000;   // 0.30000000000000004 같은 부동소수 오차 제거
+  return Math.max(0,Math.min(duration,t));}
 function drawTimeline(){
   if(!HAS_TIMELINE) return;
   const canvas=tlCanvas,ctx=canvas.getContext('2d');
@@ -63,7 +66,7 @@ function drawTimeline(){
   ctx.fillStyle='#E8590C';
   ctx.beginPath();ctx.moveTo(px-6,TRACK_Y);ctx.lineTo(px+6,TRACK_Y);ctx.lineTo(px,TRACK_Y+10);ctx.closePath();ctx.fill();
 }
-function getKfAtX(x){return keyframes.find(kf=>Math.abs(timeToX(kf.time)-x)<10)||null;}
+function getKfAtX(x){return keyframes.find(kf=>Math.abs(timeToX(kf.time)-x)<7)||null;}
 tlCanvas.addEventListener('mousedown',e=>{
   const rect=tlCanvas.getBoundingClientRect();const x=e.clientX-rect.left;
   const kf=getKfAtX(x);
