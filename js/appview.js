@@ -122,16 +122,15 @@ document.getElementById('tlSaveMotion').addEventListener('click',()=>{
 });
 document.getElementById('tlLoadMotion').addEventListener('click',()=>document.getElementById('motionFileIn').click());
 // ★ 불러오기 → 실물 포맷 / 기존 뷰어 포맷 둘 다 지원
-document.getElementById('motionFileIn').addEventListener('change',async e=>{
-  const f=e.target.files[0];if(!f)return;
-  const raw=JSON.parse(await readText(f));
+// 모션 JSON(실물 포맷 / 뷰어 포맷 / 배열) 을 타임라인에 올린다
+function loadMotionData(raw){
   const D2R=Math.PI/180;
   let frames=null, initArr=null;
   if(Array.isArray(raw)){ frames=raw; }
   else if(raw.keyframes){ // 기존 뷰어 포맷
     duration=raw.duration||5;keyframes=raw.keyframes||[];
     kfIdCounter=keyframes.reduce((m,k)=>Math.max(m,k.id+1),0);
-    document.getElementById('tlDurInput').value=duration;updateKfCount();currentTime=0;applyAtTime(0);e.target.value='';return;
+    document.getElementById('tlDurInput').value=duration;updateKfCount();currentTime=0;applyAtTime(0);return;
   } else { // 실물 포맷 {name:{init,pos}}
     const key=Object.keys(raw)[0]; const m=raw[key]||{}; frames=m.pos||m.table||[]; initArr=m.init||null;
   }
@@ -153,6 +152,27 @@ document.getElementById('motionFileIn').addEventListener('change',async e=>{
     document.getElementById('tlDurInput').value=duration;
     updateKfCount();currentTime=0;applyAtTime(0);
   }
+}
+
+// motions/ 목록을 드롭다운에 채운다 (js/motion_names.js 의 MOTION_NAMES)
+(function(){
+  const sel=document.getElementById('motionPick');
+  if(!sel || typeof MOTION_NAMES==='undefined') return;
+  MOTION_NAMES.forEach(n=>{ const o=document.createElement('option'); o.value=o.textContent=n; sel.appendChild(o); });
+  sel.addEventListener('change', async function(){
+    const n=this.value; if(!n) return;
+    try{
+      const r=await fetch('motions/'+n+'.json');
+      if(!r.ok) throw new Error(r.status);
+      loadMotionData(await r.json());
+    }catch(err){ alert('모션을 불러오지 못했습니다: '+n+' ('+err.message+')'); }
+  });
+})();
+
+document.getElementById('motionFileIn').addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{ loadMotionData(JSON.parse(await readText(f))); }
+  catch(err){ alert('모션 파일을 읽지 못했습니다: '+err.message); }
   e.target.value='';
 });
 
