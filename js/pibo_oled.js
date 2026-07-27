@@ -7,6 +7,11 @@ const Oled = (function () {
   const buf = document.createElement('canvas');
   buf.width = W; buf.height = H;
   const g = buf.getContext('2d');
+  // 프레임에 가려지는 만큼 안으로 넣는 비율.
+  //   글씨 크기 10 에서 한글 한 글자 = 10px, 그 절반인 5px 를 좌우/상하에서 확보
+  //   → (128 - 5*2) / 128 = 0.9219.  더 넣고 싶으면 이 값만 낮추면 된다.
+  const BEZEL_SCALE = 0.9219;
+
   // 글씨 크기 기본 10 — 실물 openpibo Oled 와 동일
   let fontSize = 10, inverted = false, tex = null, attached = false;
   // LCD 메시가 정사각형(28×27.5mm)에 가까운데 OLED 는 128×64(2:1) 이라
@@ -45,9 +50,11 @@ const Oled = (function () {
     attach();
     if (!tex) return;
     // 128×64 버퍼를 비율 유지한 채 가운데 정렬 (좌표계는 항상 0~127 / 0~63)
+    // 실물은 LCD 겉을 프레임이 덮어 가장자리가 조금 가려진다.
+    // 글씨 크기 10 기준 한글 0.5글자(5px)만큼 사방을 안으로 넣어 잘리지 않게 한다.
     dg.fillStyle = '#000';
     dg.fillRect(0, 0, disp.width, disp.height);
-    const sc = Math.min(disp.width / W, disp.height / H);
+    const sc = Math.min(disp.width / W, disp.height / H) * BEZEL_SCALE;
     const w = W * sc, h = H * sc;
     dg.imageSmoothingEnabled = false;
     dg.drawImage(buf, (disp.width - w) / 2, (disp.height - h) / 2, w, h);
