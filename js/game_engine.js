@@ -6,16 +6,12 @@
 //
 // 좌표: 상판 위 월드 좌표(m). PIBO 정면은 월드 +Z (URDF -Y).
 //
-// ★ 이동 방식 (v2)
-//   물리가 켜져 있으면 로봇을 코드로 옮기지 않는다. 개발툴에서 걷는 것과
-//   똑같이 forward1 / backward1 모션을 재생한다. 다만 이 로봇의 실제
-//   보폭은 한 걸음에 14mm 뿐이고(발도 4mm 밖에 안 든다) 물리만으로는
-//   앞으로 나가지 않으므로, 몸의 전진은 코드가 담당한다.
-//   방향 틀어짐(한 걸음에 12~15도)만 보정하되, 회전축을 디딤발로 잡아
-//   바닥에 붙은 발이 끌리지 않게 한다.
+// ★ 이동 방식 (v3) — 개발툴과 완전히 동일
+//   걷기·돌기는 모션을 재생할 뿐, 로봇을 코드로 옮기지도 방향을 보정하지도
+//   않는다. 발과 바닥의 마찰로 실제로 걸어간다 (실측: 한 걸음 약 49mm,
+//   도는 모션 1회 약 33도). 실물처럼 걸음마다 방향이 조금씩 휘는데,
+//   그건 플레이어가 돌기 블록으로 잡는 것이 게임이다.
 
-const HEADING_LOCK = true;    // 걸을 때 방향 틀어짐 보정 (끄면 한 걸음마다 12~15도씩 휜다)
-const SWING_MIN_Y  = 0.004;   // 두 발 높이차가 이보다 크면 '한 발로 서 있다'고 본다
 const WALL_H       = 0.06;    // 벽 높이(m)
 
 const Game = {
@@ -98,11 +94,14 @@ const Game = {
     }
   },
 
-  // 바라보는 방향(명령값). 물리가 켜져 있으면 아래 방향고정이 따라오게 한다.
+  // 물리 OFF 일 때만 의미 있는 명령값. ON 이면 방향은 물리가 결정한다.
   setHeading(deg){
     this.heading = ((deg % 360) + 360) % 360;
     if(robotRoot && !this.physOn()) robotRoot.rotation.y = this.heading * Math.PI / 180;
   },
+
+  // 게임 로직이 쓰는 '지금 바라보는 방향'
+  facing(){ return this.physOn() ? this.actualHeading() : this.heading; },
 
   // 로봇이 실제로 바라보는 방향(도) — 물리가 결정한 값
   actualHeading(){
@@ -111,48 +110,6 @@ const Game = {
     const q = new THREE.Quaternion(r.x, r.y, r.z, r.w);
     const f = new THREE.Vector3(0, -1, 0).applyQuaternion(q);   // URDF -Y = 로봇 정면
     return Math.atan2(f.x, f.z) * 180 / Math.PI;
-  },
-
-  // ── 방향 고정 ──
-  // 걸음 모션은 한 번에 15도쯤 몸이 틀어진다. 그대로 두면 "앞으로"가
-  // 옆으로 새는 것처럼 보이므로, 몸 전체를 세로축 기준으로 살짝 되돌린다.
-  // (기울기는 건드리지 않으므로 넘어짐은 그대로 살아 있다)
-  _lockQ: null, _lockV: null,
-  applyHeadingLock(){
-    if(!HEADING_LOCK || !this.running || !this.physOn()) return;
-    if(this.fallen()) return;                      // 넘어졌으면 그대로 둔다
-    let d = this.heading - this.actualHeading();
-    while(d >  180) d -= 360;
-    while(d < -180) d += 360;
-    if(Math.abs(d) < 0.01) return;
-    d = d * Math.PI / 180;
-
-    // ★ 회전 중심은 몸통이 아니라 '디딤발' 이어야 한다.
-    //   몸통 중심으로 돌리면 바닥에 붙어 있는 발이 매 프레임 끌려간다
-    //   (실측: 다섯 걸음에 448mm 강제 이동 = 화면에서 보이는 미끄러짐).
-    //   디딤발을 축으로 돌리면 그 발은 제자리에 남는다 (실측 0mm).
-    const fl = PHYS.bodies['foot_l_link'], fr = PHYS.bodies['foot_r_link'];
-    if(!fl || !fr) return;
-    const pl = fl.rb.translation(), pr = fr.rb.translation();
-    const dy = pl.y - pr.y;
-    if(Math.abs(dy) < SWING_MIN_Y) return;         // 양발이 다 닿아 있으면 보정 안 함
-    const c = (dy < 0) ? pl : pr;                  // 낮은 쪽 = 디딤발
-
-    if(!this._lockQ){ this._lockQ = new THREE.Quaternion(); this._lockV = new THREE.Vector3(); }
-    const R = this._lockQ.setFromAxisAngle(new THREE.Vector3(0, 1, 0), d);
-    for(const k in PHYS.bodies){
-      const rb = PHYS.bodies[k].rb;
-      const p = rb.translation(), q = rb.rotation();
-      this._lockV.set(p.x - c.x, 0, p.z - c.z).applyQuaternion(R);
-      rb.setTranslation({ x: c.x + this._lockV.x, y: p.y, z: c.z + this._lockV.z }, true);
-      const nq = R.clone().multiply(new THREE.Quaternion(q.x, q.y, q.z, q.w));
-      rb.setRotation({ x: nq.x, y: nq.y, z: nq.z, w: nq.w }, true);
-      const lv = rb.linvel(), av = rb.angvel();
-      const l2 = this._lockV.set(lv.x, lv.y, lv.z).applyQuaternion(R).clone();
-      rb.setLinvel({ x: l2.x, y: l2.y, z: l2.z }, true);
-      const a2 = this._lockV.set(av.x, av.y, av.z).applyQuaternion(R).clone();
-      rb.setAngvel({ x: a2.x, y: a2.y, z: a2.z }, true);
-    }
   },
 
   // ── 오브젝트 만들기 ──
@@ -280,9 +237,3 @@ const Game = {
 
 // 아이템/골인 판정은 20Hz 면 충분하다
 setInterval(() => Game.tick(), 50);
-
-// 방향 고정은 매 프레임 (물리가 매 프레임 몸을 틀기 때문에 여기서 되돌린다)
-(function headingLoop(){
-  Game.applyHeadingLock();
-  requestAnimationFrame(headingLoop);
-})();
