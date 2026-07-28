@@ -172,6 +172,30 @@
                      }
                     }
                    }
+                  },
+                  "next": {
+                   "block": {
+                    "type": "game_eye",
+                    "fields": {
+                     "SIDE": "both",
+                     "COLOR": "#e8b33c"
+                    },
+                    "next": {
+                     "block": {
+                      "type": "game_lcd",
+                      "inputs": {
+                       "MSG": {
+                        "shadow": {
+                         "type": "text",
+                         "fields": {
+                          "TEXT": "GO!"
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
                   }
                  }
                 }
@@ -366,6 +390,15 @@
          "type": "game_motion",
          "fields": {
           "NAME": "cheer3"
+         },
+         "next": {
+          "block": {
+           "type": "game_eye",
+           "fields": {
+            "SIDE": "both",
+            "COLOR": "#4fbf6a"
+           }
+          }
          }
         }
        }
@@ -545,35 +578,44 @@
     "inputs": {
      "DO": {
       "block": {
-       "type": "game_say",
-       "inputs": {
-        "MSG": {
-         "shadow": {
-          "type": "text",
-          "fields": {
-           "TEXT": "넘어졌어요"
-          }
-         }
-        }
+       "type": "game_eye",
+       "fields": {
+        "SIDE": "both",
+        "COLOR": "#d8323c"
        },
        "next": {
         "block": {
-         "type": "game_wait",
+         "type": "game_say",
          "inputs": {
-          "SEC": {
+          "MSG": {
            "shadow": {
-            "type": "math_number",
+            "type": "text",
             "fields": {
-             "NUM": 1
+             "TEXT": "넘어졌어요"
             }
            }
           }
          },
          "next": {
           "block": {
-           "type": "game_motion",
-           "fields": {
-            "NAME": "stop"
+           "type": "game_wait",
+           "inputs": {
+            "SEC": {
+             "shadow": {
+              "type": "math_number",
+              "fields": {
+               "NUM": 1
+              }
+             }
+            }
+           },
+           "next": {
+            "block": {
+             "type": "game_motion",
+             "fields": {
+              "NAME": "stop"
+             }
+            }
            }
           }
          }
