@@ -177,8 +177,7 @@
                    "block": {
                     "type": "game_eye",
                     "fields": {
-                     "SIDE": "both",
-                     "COLOR": "#e8b33c"
+                     "SIDE": "both"
                     },
                     "next": {
                      "block": {
@@ -191,6 +190,16 @@
                           "TEXT": "GO!"
                          }
                         }
+                       }
+                      }
+                     }
+                    },
+                    "inputs": {
+                     "COLOR": {
+                      "shadow": {
+                       "type": "colour_picker",
+                       "fields": {
+                        "COLOUR": "#e8b33c"
                        }
                       }
                      }
@@ -395,8 +404,17 @@
           "block": {
            "type": "game_eye",
            "fields": {
-            "SIDE": "both",
-            "COLOR": "#4fbf6a"
+            "SIDE": "both"
+           },
+           "inputs": {
+            "COLOR": {
+             "shadow": {
+              "type": "colour_picker",
+              "fields": {
+               "COLOUR": "#4fbf6a"
+              }
+             }
+            }
            }
           }
          }
@@ -580,8 +598,7 @@
       "block": {
        "type": "game_eye",
        "fields": {
-        "SIDE": "both",
-        "COLOR": "#d8323c"
+        "SIDE": "both"
        },
        "next": {
         "block": {
@@ -617,6 +634,16 @@
              }
             }
            }
+          }
+         }
+        }
+       },
+       "inputs": {
+        "COLOR": {
+         "shadow": {
+          "type": "colour_picker",
+          "fields": {
+           "COLOUR": "#d8323c"
           }
          }
         }
