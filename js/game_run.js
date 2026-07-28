@@ -292,11 +292,13 @@ function gameRun() {
   gLog('게임 시작 — 방향키로 조종하세요');
 
   (function loop() {
-    if (!gameRunning) return;
+    if (!gameRunning || !gameInterp) return;
     let more = true;
     try {
       for (let i = 0; i < 600; i++) {
         more = gameInterp.step();
+        // 스텝 도중 gOver/gLife 가 gameStop() 을 부르면 gameInterp 가 null 이 된다
+        if (!gameRunning || !gameInterp) return;
         if (!more || gameInterp.paused_) break;
       }
     } catch (e) { gLog('실행 오류: ' + e.message, 'err'); gameStop(); return; }
