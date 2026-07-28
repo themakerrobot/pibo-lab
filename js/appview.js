@@ -181,6 +181,7 @@ document.getElementById('motionFileIn').addEventListener('change',async e=>{
 
 // OTHER TOOLS
 document.getElementById('gridBtn').addEventListener('click',function(){gridOn=!gridOn;grid.visible=gridOn&&!!(themeGroup&&themeGroup.userData.light.grid);this.classList.toggle('on',gridOn);});
+document.getElementById('ssBtn').addEventListener('click',()=>{renderer.render(scene,camera);const a=document.createElement('a');a.download='urdf_sim.png';a.href=cv.toDataURL('image/png');a.click();});
 document.getElementById('resetBtn').addEventListener('click',()=>{
   isPlaying=false;document.getElementById('tlPlayPause').textContent='▶';
   document.querySelectorAll('.jslider').forEach(sl=>{sl.value=0;sl.dispatchEvent(new Event('input'));});

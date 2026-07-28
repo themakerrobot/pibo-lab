@@ -155,7 +155,7 @@ async function loadRobot(){
       for(const v of link.visuals){const b=basename(v.fn),geo=geos[b];if(!geo)continue;
         const col=v.rgba?new THREE.Color(v.rgba[0],v.rgba[1],v.rgba[2]).getHex():getColor(lname);
         const mat=new THREE.MeshPhongMaterial({color:col,specular:0x111122,shininess:28});
-        const mesh=new THREE.Mesh(geo,mat);mesh.userData={linkName:lname};
+        const mesh=new THREE.Mesh(geo,mat);mesh.userData={linkName:lname,file:b};
         if(b.includes('torso_lcd'))lcdMesh=mesh;
         if(b.includes('head_glasses')){glassesMesh=mesh;splitGlassesLR(mesh);}
         mesh.position.set(...v.origin.xyz);mesh.setRotationFromEuler(new THREE.Euler(...v.origin.rpy,'XYZ'));mesh.scale.set(...v.sc);
@@ -294,7 +294,13 @@ function setGlassColor(left, right){
 // ═══════════════════════════════════════════════════════════
 // 파트(링크)별 색상 — 좌측 패널에서 링크마다 색을 바꾼다
 // ═══════════════════════════════════════════════════════════
-// LCD 와 눈(안경)은 각각 전용 UI 가 있어서 여기서는 제외한다.
+// 색을 바꿀 수 있는 것만 목록에 올린다.
+//  · 고정: 눈·입·LCD·센서/USB/버튼/DC·신발 — 실물에서 정해진 색이라 그대로 둔다
+//  · 별도: 머리 장식(head_top) 은 '악세사리' 로 따로 뺀다
+//  · 제외: 안경(눈 발광)과 LCD 는 각각 전용 UI 가 있다
+const FIXED_PARTS = ['head_eye', 'head_mouth', 'torso_lcd',
+                     'torso_sensor', 'torso_usb', 'torso_button', 'torso_dc', 'shoes'];
+const ACCESSORY = { head_top: '머리 장식' };
 const PART_LABEL = {
   base_link:'몸통', head_pan_link:'목', head_link:'머리',
   shoulder_l_link:'왼쪽 어깨', arm_l_link:'왼팔',
@@ -302,7 +308,21 @@ const PART_LABEL = {
   leg_l_link:'왼쪽 다리', foot_l_link:'왼발',
   leg_r_link:'오른쪽 다리', foot_r_link:'오른발',
 };
-let partOrigColors = {};   // 링크별 원래 색 (되돌리기용)
+let partOrigColors = {};   // 되돌리기용 원래 색
+
+const fileOf = m => (m.userData && m.userData.file) || '';
+const isFixed = m => FIXED_PARTS.some(f => fileOf(m).includes(f));
+const accessoryOf = m => Object.keys(ACCESSORY).find(k => fileOf(m).includes(k));
+
+// key 는 링크명(일반) 또는 'acc:head_top'(악세사리)
+function meshesOfKey(key){
+  return allMeshes.filter(m => {
+    if(m === lcdMesh || m === glassesMesh || isFixed(m)) return false;
+    const acc = accessoryOf(m);
+    return key.startsWith('acc:') ? ('acc:' + acc) === key
+                                  : (!acc && m.userData.linkName === key);
+  });
+}
 
 function buildPartColors(){
   const box = document.getElementById('partColors');
@@ -310,40 +330,37 @@ function buildPartColors(){
   if(!box || !sec) return;
   box.innerHTML = ''; partOrigColors = {};
 
-  const byLink = {};
-  allMeshes.forEach(m => {
-    if(m === lcdMesh || m === glassesMesh) return;
-    const ln = m.userData && m.userData.linkName;
-    if(!ln) return;
-    (byLink[ln] = byLink[ln] || []).push(m);
-  });
+  const keys = [];
+  Object.keys(ACCESSORY).forEach(a => { if(meshesOfKey('acc:' + a).length) keys.push('acc:' + a); });
+  const linkKeys = new Set(allMeshes
+    .filter(m => !isFixed(m) && !accessoryOf(m) && m !== lcdMesh && m !== glassesMesh)
+    .map(m => m.userData && m.userData.linkName).filter(Boolean));
+  Object.keys(PART_LABEL).forEach(n => { if(linkKeys.has(n)) keys.push(n); });
+  linkKeys.forEach(n => { if(!PART_LABEL[n]) keys.push(n); });
+  if(!keys.length) return;
 
-  const names = Object.keys(PART_LABEL).filter(n => byLink[n])
-    .concat(Object.keys(byLink).filter(n => !PART_LABEL[n]));
-  if(!names.length) return;
-
-  names.forEach(ln => {
-    const hex = '#' + byLink[ln][0].material.color.getHexString();
-    partOrigColors[ln] = hex;
+  keys.forEach(key => {
+    const meshes = meshesOfKey(key);
+    if(!meshes.length) return;
+    const hex = '#' + meshes[0].material.color.getHexString();
+    partOrigColors[key] = hex;
     const row = document.createElement('div');
     row.className = 'pc-row';
     const lab = document.createElement('label');
-    lab.textContent = PART_LABEL[ln] || ln.replace(/_link$/, '');
-    lab.title = ln;
+    lab.textContent = key.startsWith('acc:') ? ACCESSORY[key.slice(4)]
+                                             : (PART_LABEL[key] || key.replace(/_link$/, ''));
+    lab.title = key;
     const inp = document.createElement('input');
-    inp.type = 'color'; inp.value = hex;
-    inp.dataset.link = ln;
-    inp.addEventListener('input', () => setPartColor(ln, inp.value));
+    inp.type = 'color'; inp.value = hex; inp.dataset.key = key;
+    inp.addEventListener('input', () => setPartColor(key, inp.value));
     row.appendChild(lab); row.appendChild(inp);
     box.appendChild(row);
   });
   sec.style.display = 'block';
 }
 
-function setPartColor(linkName, colour){
-  allMeshes.forEach(m => {
-    if(m === lcdMesh || m === glassesMesh) return;
-    if(!m.userData || m.userData.linkName !== linkName) return;
+function setPartColor(key, colour){
+  meshesOfKey(key).forEach(m => {
     const ms = Array.isArray(m.material) ? m.material : [m.material];
     ms.forEach(x => x.color.set(colour));
   });
@@ -351,10 +368,10 @@ function setPartColor(linkName, colour){
 
 uiOn('partResetBtn','click', () => {
   document.querySelectorAll('#partColors input[type=color]').forEach(inp => {
-    const ln = inp.dataset.link;
-    if(!ln || !partOrigColors[ln]) return;
-    inp.value = partOrigColors[ln];
-    setPartColor(ln, partOrigColors[ln]);
+    const k = inp.dataset.key;
+    if(!k || !partOrigColors[k]) return;
+    inp.value = partOrigColors[k];
+    setPartColor(k, partOrigColors[k]);
   });
 });
 
