@@ -14,6 +14,17 @@ let gameHighlighted = null;
 const gameKeys = {};
 const gameQueue = [];
 
+// ── 걷기 설정 ★ 속도가 마음에 안 들면 여기만 고치면 됨 ★ ──
+const CELL         = 0.05;   // 한 칸 = 5cm
+const WALK_RATE    = 1.5;    // 걸음 모션 배속 (1 = 실물 속도, 클수록 빠름)
+const TURN_RATE    = 1.5;    // 도는 모션 배속
+const TURN_PER_REP = 45;     // 도는 모션 1회 = 몇 도
+
+// 걸음 한 판(모션 1회) 안에서 몸이 실제로 나아가는 구간.
+// forward1 은 2.4초 동안 다리를 두 번 흔든다 (0.6~1.2초, 1.5~2.1초).
+// 그 두 구간에서만 절반씩 전진시켜야 미끄러지지 않고 걸어 보인다.
+const GAIT_PUSH = [[0.25, 0.50], [0.62, 0.88]];
+
 function gLog(msg, cls) {
   const el = document.getElementById('gConsole');
   if (!el) return;
@@ -43,13 +54,82 @@ window.addEventListener('keyup', e => {
 Game.on('item', kind => gameQueue.push('evt:' + kind));
 ['goal', 'fall', 'fallOff'].forEach(evt => Game.on(evt, () => gameQueue.push('evt:' + evt)));
 
+// ═══════════════════════════════════════════════════════════
+// 걷기 — 모션 1회 = 한 칸. 5칸이면 다섯 번 걷는다.
+// ═══════════════════════════════════════════════════════════
+// pibo_api.js 의 loadMotionByName / poseAtTime 을 그대로 쓰되,
+// 재생 속도를 조절하고 '몸의 이동'을 모션과 같은 시계에 묶기 위해
+// 재생만 여기서 직접 한다. (pibo_api.js 는 건드리지 않는다)
+
+const gSmooth = x => x * x * (3 - 2 * x);
+const gClamp01 = x => (x < 0 ? 0 : x > 1 ? 1 : x);
+
+// 걸음 위상(0~1) → 실제 전진 비율(0~1)
+function gaitAdvance(a) {
+  let out = 0;
+  const share = 1 / GAIT_PUSH.length;
+  for (let i = 0; i < GAIT_PUSH.length; i++) {
+    const s = GAIT_PUSH[i][0], e = GAIT_PUSH[i][1];
+    out += share * gSmooth(gClamp01((a - s) / (e - s)));
+  }
+  return out;
+}
+
+// 모션 1회를 rate 배속으로 재생하면서 매 프레임 onPhase(0~1) 를 불러준다.
+function gPlayOnce(name, rate, onPhase) {
+  return new Promise(function (resolve) {
+    Promise.resolve()
+      .then(function () { return loadMotionByName(name); })
+      .catch(function () { return null; })
+      .then(function (kfs) {
+        const total = (kfs && kfs.length) ? kfs[kfs.length - 1].t : 0.8;
+        const dur = total * 1000 / Math.max(0.1, rate);
+        const t0 = performance.now();
+        const step = function (now) {
+          if (!gameRunning) { if (onPhase) onPhase(1); return resolve(); }
+          const a = Math.min(1, (now - t0) / dur);
+          if (kfs) {
+            const pose = poseAtTime(kfs, a * total);
+            pose.forEach(function (d, i) { Pibo.setMotor(i, d); });
+          }
+          if (onPhase) onPhase(a);
+          a < 1 ? requestAnimationFrame(step) : resolve();
+        };
+        requestAnimationFrame(step);
+      });
+  });
+}
+
+// 한 칸 걷기 (앞 dir=1 / 뒤 dir=-1). 벽에 막히면 false
+function gWalkOneCell(dir) {
+  const rad = Game.heading * Math.PI / 180;
+  const p = Game.robotXZ();
+  const tx = p.x + Math.sin(rad) * CELL * dir;
+  const tz = p.z + Math.cos(rad) * CELL * dir;
+  if (Game.hitWall({ x: tx, z: tz })) { Game.say('벽에 막혔어요'); return Promise.resolve(false); }
+  return gPlayOnce(dir >= 0 ? 'forward1' : 'backward1', WALK_RATE, function (a) {
+    const e = gaitAdvance(a);
+    Game.moveRobotTo(p.x + (tx - p.x) * e, p.z + (tz - p.z) * e);
+  }).then(function () {
+    Game.moveRobotTo(tx, tz);   // 위상 오차 보정 — 칸에 정확히 맞춘다
+    return true;
+  });
+}
+
+// 한 번 돌기 (오른쪽 dir=1 / 왼쪽 dir=-1, deg 만큼)
+function gTurnOnce(dir, deg) {
+  const from = Game.heading;
+  return gPlayOnce(dir >= 0 ? 'right' : 'left', TURN_RATE, function (a) {
+    Game.setHeading(from + dir * deg * gSmooth(a));
+  }).then(function () { Game.setHeading(from + dir * deg); });
+}
+
 // ── 인터프리터에 노출할 함수 ──
 function buildGameApi(interp, scope) {
   const set = (n, f) => interp.setProperty(scope, n, interp.createNativeFunction(f));
   const setAsync = (n, f) => interp.setProperty(scope, n, interp.createAsyncFunction(f));
   const nat = v => (v && typeof v === 'object' && v.properties !== undefined)
     ? interp.pseudoToNative(v) : v;
-  const CELL = 0.05;   // 한 칸 = 5cm
 
   set('highlightBlock', id => {
     if (gameHighlighted) gameWorkspace.highlightBlock(null);
@@ -61,35 +141,34 @@ function buildGameApi(interp, scope) {
   // 큐에서 이벤트 이름을 하나 꺼낸다 (없으면 빈 문자열)
   set('gPoll', () => (gameQueue.length ? gameQueue.shift() : ''));
 
-  // ── 이동 (걷는 모습 + 위치 이동) ──
+  // ── 이동 : N 칸이면 걸음 모션을 N 번 ──
   setAsync('gMove', (n, cb) => {
-    const cells = Number(nat(n)) || 0;
-    const rad = Game.heading * Math.PI / 180;
-    const p = Game.robotXZ();
-    const tx = p.x + Math.sin(rad) * CELL * cells;
-    const tz = p.z + Math.cos(rad) * CELL * cells;
-    if (Game.hitWall({ x: tx, z: tz })) { Game.say('벽에 막혔어요'); return cb(); }
-    Pibo.playMotion(cells >= 0 ? 'forward1' : 'backward1', 1).catch(() => {});
-    const t0 = performance.now(), dur = Math.max(200, Math.abs(cells) * 420);
-    const step = now => {
-      const a = Math.min(1, (now - t0) / dur);
-      Game.moveRobotTo(p.x + (tx - p.x) * a, p.z + (tz - p.z) * a);
-      (a < 1 && gameRunning) ? requestAnimationFrame(step) : cb();
+    const cells = Math.round(Number(nat(n)) || 0);
+    const dir = cells >= 0 ? 1 : -1;
+    const steps = Math.abs(cells);
+    let i = 0;
+    const next = function () {
+      if (i >= steps || !gameRunning) return cb();
+      i++;
+      gWalkOneCell(dir).then(function (ok) { ok ? next() : cb(); });
     };
-    requestAnimationFrame(step);
+    next();
   });
 
+  // ── 회전 : 45도마다 도는 모션을 한 번씩 ──
   setAsync('gTurn', (deg, cb) => {
-    const d = Number(nat(deg)) || 0;
-    const from = Game.heading, t0 = performance.now();
-    const dur = Math.max(150, Math.abs(d) / Game.turnSpeed * 1000);
-    Pibo.playMotion(d >= 0 ? 'right' : 'left', 1).catch(() => {});
-    const step = now => {
-      const a = Math.min(1, (now - t0) / dur);
-      Game.setHeading(from + d * a);
-      (a < 1 && gameRunning) ? requestAnimationFrame(step) : cb();
+    const total = Number(nat(deg)) || 0;
+    const dir = total >= 0 ? 1 : -1;
+    const abs = Math.abs(total);
+    const reps = Math.max(1, Math.round(abs / TURN_PER_REP));
+    const per = abs / reps;
+    let i = 0;
+    const next = function () {
+      if (i >= reps || !gameRunning) return cb();
+      i++;
+      gTurnOnce(dir, per).then(next);
     };
-    requestAnimationFrame(step);
+    next();
   });
 
   set('gGoto', (x, z) => Game.moveRobotTo(Number(nat(x)) || 0, Number(nat(z)) || 0));
