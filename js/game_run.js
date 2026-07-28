@@ -226,6 +226,15 @@ function buildGameApi(interp, scope) {
     if (Game.lives <= 0) { Game.say('게임 오버'); gLog('게임 오버', 'warn'); gameStop(); }
   });
   set('gSay', m => { Game.say(String(nat(m))); gLog(String(nat(m))); });
+  set('gEye', (side, col) => {
+    const sd = String(nat(side)), c = String(nat(col));
+    const gl = document.getElementById('glassColorL'), gr = document.getElementById('glassColorR');
+    const L = (sd === 'right') ? (gl ? gl.value : '#00e1ff') : c;
+    const R = (sd === 'left')  ? (gr ? gr.value : '#00e1ff') : c;
+    if (gl) gl.value = L;  if (gr) gr.value = R;
+    Pibo.setEye(L, R);
+  });
+  set('gLcd', m => Pibo.lcdText(String(nat(m))));
   setAsync('gSpeak', (m, cb) => {
     const t = String(nat(m));
     Game.say(t); gLog('🔊 ' + t);

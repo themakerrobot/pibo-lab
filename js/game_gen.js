@@ -43,6 +43,11 @@
     `gAddWall(${val(b, 'X', '0')}, ${val(b, 'Z', '0')}, ${val(b, 'W', '0.2')}, ${val(b, 'D', '0.05')});\n`;
   G['game_clear_world'] = () => 'gClear();\n';
 
+  // ── 꾸미기 ──
+  G['game_eye'] = b =>
+    `gEye(${JSON.stringify(b.getFieldValue('SIDE'))}, ${JSON.stringify(b.getFieldValue('COLOR'))});\n`;
+  G['game_lcd'] = b => `gLcd(${val(b, 'MSG', "''")});\n`;
+
   // ── 점수 ──
   G['game_add_score'] = b => `gScore(${val(b, 'N', '1')});\n`;
   G['game_add_life'] = b => `gLife(${val(b, 'N', '-1')});\n`;

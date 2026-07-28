@@ -46,6 +46,8 @@ const GAME_TOOLBOX = {
         { kind: 'block', type: 'game_add_life', inputs: { N: gN(-1) } },
         { kind: 'block', type: 'game_say', inputs: { MSG: gT('잘했어요!') } },
         { kind: 'block', type: 'game_speak', inputs: { MSG: gT('안녕! 나는 파이보야') } },
+        { kind: 'block', type: 'game_eye' },
+        { kind: 'block', type: 'game_lcd', inputs: { MSG: gT('GO!') } },
         { kind: 'block', type: 'game_over' },
       ] },
 

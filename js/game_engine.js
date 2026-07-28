@@ -237,3 +237,4 @@ const Game = {
 
 // 아이템/골인 판정은 20Hz 면 충분하다
 setInterval(() => Game.tick(), 50);
+

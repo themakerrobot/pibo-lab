@@ -24,7 +24,7 @@ Blockly.defineBlocksWithJsonArray([
   {
     type: 'game_forever',
     message0: '%1 계속 반복하기',
-    args0: [{ type: 'field_image', src: 'svg/arrows-spin-solid.svg', width: 22, height: 22, alt: 'loop' }],
+    args0: [{ type: 'field_image', src: 'svg/right-left-solid.svg', width: 22, height: 22, alt: 'loop' }],
     message1: '%1',
     args1: [{ type: 'input_statement', name: 'DO' }],
     previousStatement: null,
@@ -76,7 +76,7 @@ Blockly.defineBlocksWithJsonArray([
     type: 'game_turn',
     message0: '%1 %2 %3 회 돌기',
     args0: [
-      { type: 'field_image', src: 'svg/arrows-spin-solid.svg', width: 22, height: 22 },
+      { type: 'field_image', src: 'svg/right-left-solid.svg', width: 22, height: 22 },
       { type: 'field_dropdown', name: 'DIR', options: [['오른쪽으로', '1'], ['왼쪽으로', '-1']] },
       { type: 'input_value', name: 'N', check: 'Number' },
     ],
@@ -172,6 +172,34 @@ Blockly.defineBlocksWithJsonArray([
     args0: [{ type: 'field_image', src: 'svg/eraser-solid.svg', width: 22, height: 22 }],
     previousStatement: null, nextStatement: null,
     colour: game_colour.world,
+  },
+
+  // ── 꾸미기 (시뮬 전용) ──
+  {
+    type: 'game_eye',
+    message0: '%1 %2 눈을 %3 색으로 켜기',
+    args0: [
+      { type: 'field_image', src: 'svg/eye-solid.svg', width: 22, height: 22 },
+      { type: 'field_dropdown', name: 'SIDE',
+        options: [['양쪽', 'both'], ['왼쪽', 'left'], ['오른쪽', 'right']] },
+      { type: 'field_colour', name: 'COLOR', colour: '#00e1ff' },
+    ],
+    inputsInline: true,
+    previousStatement: null, nextStatement: null,
+    colour: game_colour.score,
+    tooltip: '눈(안경) LED 색을 바꿉니다.',
+  },
+  {
+    type: 'game_lcd',
+    message0: '%1 가슴 화면에 %2 쓰기',
+    args0: [
+      { type: 'field_image', src: 'svg/font-solid.svg', width: 22, height: 22 },
+      { type: 'input_value', name: 'MSG', check: 'String' },
+    ],
+    inputsInline: true,
+    previousStatement: null, nextStatement: null,
+    colour: game_colour.score,
+    tooltip: '몸통 LCD 에 글씨를 표시합니다.',
   },
 
   // ── 점수 ──
