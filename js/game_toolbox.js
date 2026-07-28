@@ -23,7 +23,7 @@ const GAME_TOOLBOX = {
       cssConfig: { icon: 'customIcon fa-solid fa-person-walking' },
       contents: [
         { kind: 'block', type: 'game_move', inputs: { N: gN(1) } },
-        { kind: 'block', type: 'game_turn', inputs: { DEG: gN(90) } },
+        { kind: 'block', type: 'game_turn', inputs: { N: gN(1) } },
         { kind: 'block', type: 'game_goto', inputs: { X: gN(0), Z: gN(0) } },
         { kind: 'block', type: 'game_motion' },
       ] },

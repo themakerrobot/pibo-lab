@@ -26,7 +26,7 @@
   G['game_move'] = b =>
     `gMove(${b.getFieldValue('DIR')} * (${val(b, 'N', '1')}));\n`;
   G['game_turn'] = b =>
-    `gTurn(${b.getFieldValue('DIR')} * (${val(b, 'DEG', '90')}));\n`;
+    `gTurn(${b.getFieldValue('DIR')} * (${val(b, 'N', '1')}));\n`;
   G['game_goto'] = b =>
     `gGoto(${val(b, 'X', '0')}, ${val(b, 'Z', '0')});\n`;
   G['game_motion'] = b =>

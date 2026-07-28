@@ -74,15 +74,16 @@ Blockly.defineBlocksWithJsonArray([
   },
   {
     type: 'game_turn',
-    message0: '%1 %2 %3 도 돌기',
+    message0: '%1 %2 %3 회 돌기',
     args0: [
       { type: 'field_image', src: 'svg/arrows-spin-solid.svg', width: 22, height: 22 },
       { type: 'field_dropdown', name: 'DIR', options: [['오른쪽으로', '1'], ['왼쪽으로', '-1']] },
-      { type: 'input_value', name: 'DEG', check: 'Number' },
+      { type: 'input_value', name: 'N', check: 'Number' },
     ],
     inputsInline: true,
     previousStatement: null, nextStatement: null,
     colour: game_colour.move,
+    tooltip: '도는 모션을 N번 재생합니다. 1회에 약 33도 돕니다.',
   },
   {
     type: 'game_goto',

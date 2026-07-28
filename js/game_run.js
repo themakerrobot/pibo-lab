@@ -92,20 +92,19 @@ function gStepKinematic(name, dir) {
     }));
 }
 
-// 돌기 — right 모션은 화면 기준 오른쪽(방향각 감소)으로 돈다. 물리에 맡긴다.
-function gTurnBy(deg) {
-  const dir = deg >= 0 ? 1 : -1;           // +1 = 오른쪽
-  const abs = Math.abs(deg);
+// 돌기 — N회면 도는 모션 N번. right = 화면 기준 오른쪽(방향각 감소).
+function gTurnBy(n) {
+  const dir = n >= 0 ? 1 : -1;             // +1 = 오른쪽
+  const reps = Math.max(1, Math.round(Math.abs(n)));
   const name = dir >= 0 ? 'right' : 'left';
-  const reps = Math.max(1, Math.round(abs / TURN_PER_REP));
   if (Game.physOn()) return Pibo.playMotion(name, reps).catch(() => {});
-  // 물리 OFF: 모션 시간에 맞춰 방향값만 돌린다
+  // 물리 OFF: 모션 시간에 맞춰 방향값을 1회당 TURN_PER_REP 도씩 돌린다
   return Promise.resolve()
     .then(() => loadMotionByName(name)).catch(() => null)
     .then(kfs => {
       const sec = kfs && kfs.length ? kfs[kfs.length - 1].t : 1.0;
       const total = sec * reps * 1000, t0 = performance.now();
-      const from = Game.heading, hsign = -dir;
+      const from = Game.heading, hsign = -dir, abs = TURN_PER_REP * reps;
       const ramp = () => {
         if (!gameRunning) return;
         const a = Math.min(1, (performance.now() - t0) / total);
@@ -156,9 +155,9 @@ function buildGameApi(interp, scope) {
     next();
   });
 
-  // ── 회전 ──
-  setAsync('gTurn', (deg, cb) => {
-    gTurnBy(Number(nat(deg)) || 0).then(() => cb());
+  // ── 회전 : N회면 도는 모션 N번 ──
+  setAsync('gTurn', (n, cb) => {
+    gTurnBy(Number(nat(n)) || 0).then(() => cb());
   });
 
   set('gGoto', (x, z) => Game.moveRobotTo(Number(nat(x)) || 0, Number(nat(z)) || 0));
