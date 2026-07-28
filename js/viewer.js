@@ -180,6 +180,7 @@ async function loadRobot(){
       if(glassesMesh){ setGlassColor('#00e1ff','#00e1ff');
         const _gl=document.getElementById('glassColorL'), _gr=document.getElementById('glassColorR');
         if(_gl)_gl.value='#00e1ff'; if(_gr)_gr.value='#00e1ff'; }
+      buildPartColors();
     }
     buildSliders(joints);
     // ★ 로드 직후 슬라이더 0 적용 → 어깨 오프셋(앞으로 나란히) 반영
@@ -273,7 +274,7 @@ function splitGlassesLR(mesh){
 // left / right 는 실물 eye_on_s 인자와 같은 의미. 한쪽만 주면 양쪽 다 같은 색.
 // 실물은 네오픽셀(자체발광)이라 (0,0,0) 은 '검은색'이 아니라 '꺼짐' 이다.
 // 그래서 색을 diffuse 가 아니라 emissive 에 넣는다 → 0 이면 조명만 받는 렌즈색으로 돌아간다.
-const EYE_OFF = 0x33383D;   // 꺼졌을 때 렌즈 본래 색
+const EYE_OFF = 0x5A6068;   // 꺼졌을 때 렌즈 본래 색. 더 밝게/어둡게 하려면 이 값만 조정
 function applyEyeColor(mat, colour){
   if(!mat) return;
   const c = new THREE.Color(colour);
@@ -289,6 +290,73 @@ function setGlassColor(left, right){
   if(glassMatL || glassMatR){ applyEyeColor(glassMatL, left); applyEyeColor(glassMatR, right); }
   else if(glassesMesh) applyEyeColor(glassesMesh.material, left);
 }
+
+// ═══════════════════════════════════════════════════════════
+// 파트(링크)별 색상 — 좌측 패널에서 링크마다 색을 바꾼다
+// ═══════════════════════════════════════════════════════════
+// LCD 와 눈(안경)은 각각 전용 UI 가 있어서 여기서는 제외한다.
+const PART_LABEL = {
+  base_link:'몸통', head_pan_link:'목', head_link:'머리',
+  shoulder_l_link:'왼쪽 어깨', arm_l_link:'왼팔',
+  shoulder_r_link:'오른쪽 어깨', arm_r_link:'오른팔',
+  leg_l_link:'왼쪽 다리', foot_l_link:'왼발',
+  leg_r_link:'오른쪽 다리', foot_r_link:'오른발',
+};
+let partOrigColors = {};   // 링크별 원래 색 (되돌리기용)
+
+function buildPartColors(){
+  const box = document.getElementById('partColors');
+  const sec = document.getElementById('partColorSec');
+  if(!box || !sec) return;
+  box.innerHTML = ''; partOrigColors = {};
+
+  const byLink = {};
+  allMeshes.forEach(m => {
+    if(m === lcdMesh || m === glassesMesh) return;
+    const ln = m.userData && m.userData.linkName;
+    if(!ln) return;
+    (byLink[ln] = byLink[ln] || []).push(m);
+  });
+
+  const names = Object.keys(PART_LABEL).filter(n => byLink[n])
+    .concat(Object.keys(byLink).filter(n => !PART_LABEL[n]));
+  if(!names.length) return;
+
+  names.forEach(ln => {
+    const hex = '#' + byLink[ln][0].material.color.getHexString();
+    partOrigColors[ln] = hex;
+    const row = document.createElement('div');
+    row.className = 'pc-row';
+    const lab = document.createElement('label');
+    lab.textContent = PART_LABEL[ln] || ln.replace(/_link$/, '');
+    lab.title = ln;
+    const inp = document.createElement('input');
+    inp.type = 'color'; inp.value = hex;
+    inp.dataset.link = ln;
+    inp.addEventListener('input', () => setPartColor(ln, inp.value));
+    row.appendChild(lab); row.appendChild(inp);
+    box.appendChild(row);
+  });
+  sec.style.display = 'block';
+}
+
+function setPartColor(linkName, colour){
+  allMeshes.forEach(m => {
+    if(m === lcdMesh || m === glassesMesh) return;
+    if(!m.userData || m.userData.linkName !== linkName) return;
+    const ms = Array.isArray(m.material) ? m.material : [m.material];
+    ms.forEach(x => x.color.set(colour));
+  });
+}
+
+uiOn('partResetBtn','click', () => {
+  document.querySelectorAll('#partColors input[type=color]').forEach(inp => {
+    const ln = inp.dataset.link;
+    if(!ln || !partOrigColors[ln]) return;
+    inp.value = partOrigColors[ln];
+    setPartColor(ln, partOrigColors[ln]);
+  });
+});
 
 function readText(f){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.onerror=j;fr.readAsText(f);});}
 function readBuf(f){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.onerror=j;fr.readAsArrayBuffer(f);});}

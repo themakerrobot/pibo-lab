@@ -22,18 +22,10 @@
       <div class="sec-title">뷰</div>
       <select class="tl-select" id="themeSel" style="width:100%;margin-bottom:5px"><option value="desk">배경: 책상</option><option value="dining">배경: 식탁</option><option value="bench">배경: 작업대</option><option value="plain">배경: 심플</option></select>
       <button class="tb on" id="gridBtn"><span class="ic">&#x22DE;</span>그리드</button>
-      <button class="tb" id="wireBtn"><span class="ic">&#x25A6;</span>와이어</button>
-      <button class="tb" id="axisBtn"><span class="ic">&#x2197;</span>관절축</button>
-      <button class="tb" id="ssBtn"><span class="ic">&#x1F4F7;</span>스크린샷</button>
     </div>
     <div class="sec">
       <div class="sec-title">포즈</div>
       <button class="tb" id="resetBtn"><span class="ic">&#x21BA;</span>리셋</button>
-      <div class="pose-row">
-        <button class="pose-btn" id="savePoseBtn">&#x1F4BE; 저장</button>
-        <button class="pose-btn" id="loadPoseBtn">&#x1F4C2; 불러오기</button>
-      </div>
-      <input type="file" id="poseFileIn" accept=".json">
     </div>
     <div class="sec">
       <div class="sec-title">LCD</div>
@@ -52,10 +44,12 @@
       <div class="info-row"><span>기울기</span><span class="info-val" id="physTilt">-</span></div>
       <div class="info-row"><span>이동거리</span><span class="info-val" id="physDist">-</span></div>
     </div>
-    <div class="sec" id="infoSec" style="display:none">
-      <div class="sec-title">정보</div>
-      <div id="infoRows"></div>
+    <div class="sec" id="partColorSec" style="display:none">
+      <div class="sec-title">파트 색상</div>
+      <div id="partColors"></div>
+      <button class="tb" id="partResetBtn" style="margin-top:6px"><span class="ic">&#x21BA;</span>색상 되돌리기</button>
     </div>
+    <div class="sec" id="infoSec" style="display:none"><div id="infoRows"></div></div>
   </div>
 
   <div class="viewport" id="vp">

@@ -181,24 +181,10 @@ document.getElementById('motionFileIn').addEventListener('change',async e=>{
 
 // OTHER TOOLS
 document.getElementById('gridBtn').addEventListener('click',function(){gridOn=!gridOn;grid.visible=gridOn&&!!(themeGroup&&themeGroup.userData.light.grid);this.classList.toggle('on',gridOn);});
-document.getElementById('wireBtn').addEventListener('click',function(){wireMode=!wireMode;this.classList.toggle('on',wireMode);allMeshes.forEach(m=>{const ms=Array.isArray(m.material)?m.material:[m.material]; ms.forEach(x=>x.wireframe=wireMode);});});
-document.getElementById('axisBtn').addEventListener('click',function(){axisMode=!axisMode;this.classList.toggle('on',axisMode);allAxes.forEach(a=>a.visible=axisMode);});
-document.getElementById('ssBtn').addEventListener('click',()=>{renderer.render(scene,camera);const a=document.createElement('a');a.download='urdf_sim.png';a.href=cv.toDataURL('image/png');a.click();});
 document.getElementById('resetBtn').addEventListener('click',()=>{
   isPlaying=false;document.getElementById('tlPlayPause').textContent='▶';
   document.querySelectorAll('.jslider').forEach(sl=>{sl.value=0;sl.dispatchEvent(new Event('input'));});
   if(typeof PHYS!=='undefined' && PHYS.on) PHYS.reset();   // 위치·기울기까지 원위치
-});
-document.getElementById('savePoseBtn').addEventListener('click',()=>{
-  const pose={};document.querySelectorAll('.jslider').forEach(sl=>{pose[sl.dataset.joint]=parseFloat(sl.value);});
-  const a=document.createElement('a');a.download='pose.json';a.href=URL.createObjectURL(new Blob([JSON.stringify(pose,null,2)],{type:'application/json'}));a.click();
-});
-document.getElementById('loadPoseBtn').addEventListener('click',()=>document.getElementById('poseFileIn').click());
-document.getElementById('poseFileIn').addEventListener('change',async e=>{
-  const f=e.target.files[0];if(!f)return;
-  const pose=JSON.parse(await readText(f));
-  Object.entries(pose).forEach(([name,val])=>{const sl=sliderEls[name];if(!sl)return;sl.value=val;sl.dispatchEvent(new Event('input'));});
-  e.target.value='';
 });
 
 cv.addEventListener('click',e=>{
