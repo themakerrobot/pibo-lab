@@ -228,8 +228,8 @@ function setupLCD(){
   lcdDraw(document.getElementById('lcdText').value||'');
 }
 document.getElementById('lcdText').addEventListener('input',function(){ if(lcdDraw) lcdDraw(this.value); });
-uiOn('glassColorL','input',function(){ if(glassMatL) glassMatL.color.set(this.value); });
-uiOn('glassColorR','input',function(){ if(glassMatR) glassMatR.color.set(this.value); });
+uiOn('glassColorL','input',function(){ applyEyeColor(glassMatL, this.value); });
+uiOn('glassColorR','input',function(){ applyEyeColor(glassMatR, this.value); });
 document.getElementById('lcdColor').addEventListener('input',function(){ lcdTextColor=this.value; if(lcdDraw) lcdDraw(document.getElementById('lcdText').value); });
 
 // UTILS
@@ -271,11 +271,23 @@ function splitGlassesLR(mesh){
 }
 
 // left / right 는 실물 eye_on_s 인자와 같은 의미. 한쪽만 주면 양쪽 다 같은 색.
+// 실물은 네오픽셀(자체발광)이라 (0,0,0) 은 '검은색'이 아니라 '꺼짐' 이다.
+// 그래서 색을 diffuse 가 아니라 emissive 에 넣는다 → 0 이면 조명만 받는 렌즈색으로 돌아간다.
+const EYE_OFF = 0x33383D;   // 꺼졌을 때 렌즈 본래 색
+function applyEyeColor(mat, colour){
+  if(!mat) return;
+  const c = new THREE.Color(colour);
+  const on = (c.r + c.g + c.b) > 0.004;    // 0,0,0 이면 꺼짐
+  if(!mat.emissive) mat.emissive = new THREE.Color(0x000000);
+  mat.color.set(EYE_OFF);                  // 몸체는 항상 렌즈색
+  mat.emissive.set(on ? c : 0x000000);     // 빛나는 부분만 켜고 끈다
+  mat.emissiveIntensity = on ? 1 : 0;
+  mat.needsUpdate = true;
+}
 function setGlassColor(left, right){
   if(right === undefined) right = left;
-  if(glassMatL) glassMatL.color.set(left);
-  if(glassMatR) glassMatR.color.set(right);
-  if(!glassMatL && glassesMesh) glassesMesh.material.color.set(left);
+  if(glassMatL || glassMatR){ applyEyeColor(glassMatL, left); applyEyeColor(glassMatR, right); }
+  else if(glassesMesh) applyEyeColor(glassesMesh.material, left);
 }
 
 function readText(f){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.onerror=j;fr.readAsText(f);});}
