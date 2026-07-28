@@ -47,11 +47,13 @@
   G['game_add_score'] = b => `gScore(${val(b, 'N', '1')});\n`;
   G['game_add_life'] = b => `gLife(${val(b, 'N', '-1')});\n`;
   G['game_say'] = b => `gSay(${val(b, 'MSG', "''")});\n`;
+  G['game_speak'] = b => `gSpeak(${val(b, 'MSG', "''")});\n`;
   G['game_over'] = b => `gOver(${JSON.stringify(b.getFieldValue('RESULT'))});\n`;
 
   // ── 감지 ──
   G['game_get_score'] = () => ['gGetScore()', A];
   G['game_get_lives'] = () => ['gGetLives()', A];
+  G['game_get_time'] = () => ['gGetTime()', A];
   G['game_get_pos'] = b => [`gGetPos(${JSON.stringify(b.getFieldValue('AXIS'))})`, A];
   G['game_is_fallen'] = () => ['gIsFallen()', A];
   G['game_item_left'] = b => [`gItemLeft(${JSON.stringify(b.getFieldValue('KIND'))})`, A];

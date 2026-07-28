@@ -45,6 +45,7 @@ const GAME_TOOLBOX = {
         { kind: 'block', type: 'game_add_score', inputs: { N: gN(1) } },
         { kind: 'block', type: 'game_add_life', inputs: { N: gN(-1) } },
         { kind: 'block', type: 'game_say', inputs: { MSG: gT('잘했어요!') } },
+        { kind: 'block', type: 'game_speak', inputs: { MSG: gT('안녕! 나는 파이보야') } },
         { kind: 'block', type: 'game_over' },
       ] },
 
@@ -53,6 +54,7 @@ const GAME_TOOLBOX = {
       contents: [
         { kind: 'block', type: 'game_get_score' },
         { kind: 'block', type: 'game_get_lives' },
+        { kind: 'block', type: 'game_get_time' },
         { kind: 'block', type: 'game_get_pos' },
         { kind: 'block', type: 'game_is_fallen' },
         { kind: 'block', type: 'game_item_left' },

@@ -13,6 +13,43 @@ let gameInterp = null;
 let gameHighlighted = null;
 const gameKeys = {};
 const gameQueue = [];
+let gameT0 = 0;                       // 게임 시작 시각 (performance.now)
+const gElapsed = () => gameT0 ? (performance.now() - gameT0) / 1000 : 0;
+const gFmtTime = sec => {
+  const m = Math.floor(sec / 60), s2 = sec - m * 60;
+  return m > 0 ? m + '분 ' + s2.toFixed(1) + '초' : s2.toFixed(1) + '초';
+};
+
+// ── HUD 시간 표시 (game.html 수정 없이 여기서 붙인다) ──
+(function () {
+  const hud = document.getElementById('gHud');
+  if (!hud || document.getElementById('gTime')) return;
+  const sp = document.createElement('span');
+  sp.innerHTML = '<span class="lb">시간</span><b id="gTime">0:00</b>';
+  hud.appendChild(sp);
+  setInterval(() => {
+    const el = document.getElementById('gTime');
+    if (!el) return;
+    if (!gameRunning) return;                 // 멈추면 마지막 기록 유지
+    const t = gElapsed(), m = Math.floor(t / 60), s2 = Math.floor(t % 60);
+    el.textContent = m + ':' + String(s2).padStart(2, '0');
+  }, 250);
+})();
+
+// ── 브라우저 TTS (개발툴 blockly_run.js 와 같은 방식·같은 목소리) ──
+if (window.speechSynthesis) speechSynthesis.getVoices();
+function gSpeakAsync(text) {
+  return new Promise(res => {
+    if (!window.speechSynthesis) { gLog('(브라우저가 TTS 를 지원하지 않음)', 'warn'); return res(); }
+    const u = new SpeechSynthesisUtterance(String(text));
+    u.lang = 'ko-KR';
+    const ko = speechSynthesis.getVoices().find(v => /ko/i.test(v.lang));
+    if (ko) u.voice = ko;
+    u.onend = u.onerror = () => res();
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  });
+}
 
 // ── 걷기 ──────────────────────────────────────────────────
 // 개발툴과 동일: 모션만 재생하고 이동·방향은 전부 물리가 결정한다.
@@ -189,16 +226,23 @@ function buildGameApi(interp, scope) {
     if (Game.lives <= 0) { Game.say('게임 오버'); gLog('게임 오버', 'warn'); gameStop(); }
   });
   set('gSay', m => { Game.say(String(nat(m))); gLog(String(nat(m))); });
+  setAsync('gSpeak', (m, cb) => {
+    const t = String(nat(m));
+    Game.say(t); gLog('🔊 ' + t);
+    gSpeakAsync(t).then(() => cb());
+  });
   set('gOver', r => {
     const win = String(nat(r)) === 'win';
-    Game.say(win ? '성공!' : '실패…');
-    gLog(win ? '게임 성공' : '게임 실패', win ? '' : 'warn');
+    const t = gFmtTime(gElapsed());
+    Game.say(win ? '성공! (' + t + ')' : '실패…');
+    gLog((win ? '게임 성공' : '게임 실패') + ' — 걸린 시간 ' + t, win ? '' : 'warn');
     gameStop();
   });
 
   // ── 감지 ──
   set('gGetScore', () => Game.score);
   set('gGetLives', () => Game.lives);
+  set('gGetTime', () => Math.round(gElapsed() * 10) / 10);
   set('gGetPos', axis => {
     const p = Game.robotXZ();
     return Math.round((nat(axis) === 'z' ? p.z : p.x) * 100) / 100;
@@ -241,6 +285,8 @@ function gameRun() {
   catch (e) { gLog('실행 준비 실패: ' + e.message, 'err'); return; }
 
   gameRunning = true;
+  gameT0 = performance.now();
+  { const el = document.getElementById('gTime'); if (el) el.textContent = '0:00'; }
   Game.start();
   setGameUI(true);
   gLog('게임 시작 — 방향키로 조종하세요');
@@ -263,6 +309,7 @@ function gameStop() {
   if (!gameRunning) return;
   gameRunning = false;
   gameInterp = null;
+  if (window.speechSynthesis) speechSynthesis.cancel();
   Game.stop();
   setGameUI(false);
   if (gameWorkspace) gameWorkspace.highlightBlock(null);

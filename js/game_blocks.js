@@ -198,6 +198,18 @@ Blockly.defineBlocksWithJsonArray([
     colour: game_colour.score,
   },
   {
+    type: 'game_speak',
+    message0: '%1 %2 라고 말하기',
+    args0: [
+      { type: 'field_image', src: 'svg/comment-dots-solid.svg', width: 22, height: 22 },
+      { type: 'input_value', name: 'MSG', check: 'String' },
+    ],
+    inputsInline: true,
+    previousStatement: null, nextStatement: null,
+    colour: game_colour.score,
+    tooltip: '소리내어 읽습니다 (TTS). 말이 끝날 때까지 기다립니다.',
+  },
+  {
     type: 'game_say',
     message0: '%1 %2 라고 알리기',
     args0: [
@@ -222,6 +234,12 @@ Blockly.defineBlocksWithJsonArray([
 
   // ── 감지 ──
   { type: 'game_get_score', message0: '점수', output: 'Number', colour: game_colour.sense },
+  {
+    type: 'game_get_time',
+    message0: '경과 시간(초)',
+    output: 'Number', colour: game_colour.sense,
+    tooltip: '게임 시작부터 지금까지 걸린 시간입니다. 초 단위 (소수점 1자리).',
+  },
   { type: 'game_get_lives', message0: '목숨', output: 'Number', colour: game_colour.sense },
   {
     type: 'game_get_pos',
