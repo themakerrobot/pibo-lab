@@ -46,9 +46,17 @@ const GAME_TOOLBOX = {
         { kind: 'block', type: 'game_add_life', inputs: { N: gN(-1) } },
         { kind: 'block', type: 'game_say', inputs: { MSG: gT('잘했어요!') } },
         { kind: 'block', type: 'game_speak', inputs: { MSG: gT('안녕! 나는 파이보야') } },
-        { kind: 'block', type: 'game_eye' },
-        { kind: 'block', type: 'game_lcd', inputs: { MSG: gT('GO!') } },
         { kind: 'block', type: 'game_over' },
+      ] },
+
+    { kind: 'category', name: '꾸미기', colour: game_colour.score,
+      cssConfig: { icon: 'customIcon fa-solid fa-wand-magic-sparkles' },
+      contents: [
+        { kind: 'block', type: 'game_eye',
+          inputs: { COLOR: { shadow: { type: 'colour_picker', fields: { COLOUR: '#00e1ff' } } } } },
+        { kind: 'block', type: 'game_lcd', inputs: { MSG: gT('GO!') } },
+        { kind: 'block', type: 'colour_picker', fields: { COLOUR: '#00e1ff' } },
+        { kind: 'block', type: 'colour_random' },
       ] },
 
     { kind: 'category', name: '감지', colour: game_colour.sense,

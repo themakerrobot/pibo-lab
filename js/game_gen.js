@@ -45,7 +45,7 @@
 
   // ── 꾸미기 ──
   G['game_eye'] = b =>
-    `gEye(${JSON.stringify(b.getFieldValue('SIDE'))}, ${JSON.stringify(b.getFieldValue('COLOR'))});\n`;
+    `gEye(${JSON.stringify(b.getFieldValue('SIDE'))}, ${val(b, 'COLOR', "'#00e1ff'")});\n`;
   G['game_lcd'] = b => `gLcd(${val(b, 'MSG', "''")});\n`;
 
   // ── 점수 ──

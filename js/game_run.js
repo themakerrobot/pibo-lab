@@ -287,7 +287,11 @@ function gameRun() {
 
   const PRE = 'var __H = {};\n' +
               'function __pump() { var e = gPoll(); if (e && __H[e]) __H[e](); }\n';
-  const POST = '\nwhile (gRunning()) { __pump(); gWait(0.03); }\n';
+  // 이벤트 블록(키·만났을때·계속반복)이 있을 때만 대기 루프를 붙인다.
+  // 없으면 시작 블록 실행이 끝나는 즉시 프로그램도 끝난다.
+  const hasEvents = gameWorkspace.getAllBlocks(false).some(b =>
+    b.type === 'game_on_event' || b.type === 'game_on_key' || b.type === 'game_forever');
+  const POST = hasEvents ? '\nwhile (gRunning()) { __pump(); gWait(0.03); }\n' : '\n';
   code = PRE + code + POST;
 
   try { gameInterp = new Interpreter(code, buildGameApi); }
