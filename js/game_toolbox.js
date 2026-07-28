@@ -54,6 +54,8 @@ const GAME_TOOLBOX = {
       contents: [
         { kind: 'block', type: 'game_eye',
           inputs: { COLOR: { shadow: { type: 'colour_picker', fields: { COLOUR: '#00e1ff' } } } } },
+        { kind: 'block', type: 'game_part',
+          inputs: { COLOR: { shadow: { type: 'colour_picker', fields: { COLOUR: '#4fc3f7' } } } } },
         { kind: 'block', type: 'game_lcd', inputs: { MSG: gT('GO!') } },
         { kind: 'block', type: 'colour_picker', fields: { COLOUR: '#00e1ff' } },
         { kind: 'block', type: 'colour_random' },

@@ -235,6 +235,18 @@ function buildGameApi(interp, scope) {
     Pibo.setEye(L, R);
   });
   set('gLcd', m => Pibo.lcdText(String(nat(m))));
+  set('gPart', (part, col) => {
+    if (typeof setPartColor !== 'function') return;
+    const k = String(nat(part)), c = String(nat(col));
+    if (k === 'all') {
+      Object.keys(typeof PART_LABEL !== 'undefined' ? PART_LABEL : {}).forEach(x => setPartColor(x, c));
+      setPartColor('acc:head_top', c);
+    } else setPartColor(k, c);
+    // 체험툴 색상 패널이 열려 있을 때를 위해 입력값도 동기화
+    document.querySelectorAll('#partColors input[type=color]').forEach(inp => {
+      if (k === 'all' || inp.dataset.key === k) inp.value = c;
+    });
+  });
   setAsync('gSpeak', (m, cb) => {
     const t = String(nat(m));
     Game.say(t); gLog('🔊 ' + t);

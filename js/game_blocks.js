@@ -190,6 +190,27 @@ Blockly.defineBlocksWithJsonArray([
     tooltip: '눈(안경) LED 색을 바꿉니다. 색은 색상 블록을 끼워 정합니다.',
   },
   {
+    type: 'game_part',
+    message0: '%1 %2 을(를) %3 색으로',
+    args0: [
+      { type: 'field_image', src: 'svg/person-solid.svg', width: 22, height: 22 },
+      { type: 'field_dropdown', name: 'PART', options: [
+        ['전체', 'all'],
+        ['몸통', 'base_link'], ['머리', 'head_link'], ['목', 'head_pan_link'],
+        ['왼팔', 'arm_l_link'], ['오른팔', 'arm_r_link'],
+        ['왼쪽 어깨', 'shoulder_l_link'], ['오른쪽 어깨', 'shoulder_r_link'],
+        ['왼쪽 다리', 'leg_l_link'], ['오른쪽 다리', 'leg_r_link'],
+        ['왼발', 'foot_l_link'], ['오른발', 'foot_r_link'],
+        ['머리 장식', 'acc:head_top'],
+      ] },
+      { type: 'input_value', name: 'COLOR', check: 'Colour' },
+    ],
+    inputsInline: true,
+    previousStatement: null, nextStatement: null,
+    colour: game_colour.score,
+    tooltip: '체험툴의 파트 색상과 같습니다. 몸 각 부위의 색을 바꿉니다.',
+  },
+  {
     type: 'game_lcd',
     message0: '%1 가슴 화면에 %2 쓰기',
     args0: [

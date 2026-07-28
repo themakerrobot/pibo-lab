@@ -47,6 +47,8 @@
   G['game_eye'] = b =>
     `gEye(${JSON.stringify(b.getFieldValue('SIDE'))}, ${val(b, 'COLOR', "'#00e1ff'")});\n`;
   G['game_lcd'] = b => `gLcd(${val(b, 'MSG', "''")});\n`;
+  G['game_part'] = b =>
+    `gPart(${JSON.stringify(b.getFieldValue('PART'))}, ${val(b, 'COLOR', "'#ffffff'")});\n`;
 
   // ── 점수 ──
   G['game_add_score'] = b => `gScore(${val(b, 'N', '1')});\n`;
