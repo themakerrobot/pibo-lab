@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PIBO 게임 만들기</title>
+<link rel="stylesheet" href="css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  html,body{height:100%;margin:0;overflow:hidden}
+  #gTop{height:44px;display:flex;align-items:center;gap:6px;padding:0 12px;
+    background:var(--panel,#F7F8F9);border-bottom:1px solid var(--line,#DDE1E4);
+    font-family:var(--mono,ui-monospace,monospace);font-size:12px}
+  #gTop .title{font-weight:700;letter-spacing:.06em;margin-right:10px}
+  #gTop .sp{flex:1}
+  .db{border:1px solid var(--line,#DDE1E4);background:#fff;border-radius:2px;
+    padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit}
+  .db:hover{background:#EEF1F3}
+  .db:disabled{opacity:.4;cursor:default}
+  .db.run{background:#2E7D32;color:#fff;border-color:#2E7D32}
+  .db.stop{background:#B3352C;color:#fff;border-color:#B3352C}
+  #gMain{display:flex;height:calc(100% - 44px);min-width:0}
+  #gBlockly{flex:1;min-width:280px}
+  #gSplit{width:6px;cursor:col-resize;background:var(--line,#DDE1E4);flex-shrink:0}
+  #gSplit:hover,#gSplit.on{background:#8FA6B8}
+  #gRight{width:46vw;min-width:420px;max-width:70vw;display:flex;flex-direction:column;flex-shrink:0}
+  #vp{flex:1;position:relative;min-height:180px}
+  #gHud{position:absolute;left:12px;top:12px;z-index:20;display:flex;gap:14px;
+    background:rgba(20,22,25,.72);color:#fff;padding:6px 12px;border-radius:3px;
+    font-family:var(--mono,ui-monospace,monospace);font-size:13px;font-weight:700}
+  #gHud .lb{color:#AEB6BD;font-weight:400;font-size:11px;margin-right:4px}
+  #gMsg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:25;
+    background:rgba(20,22,25,.85);color:#fff;padding:12px 26px;border-radius:4px;
+    font-size:18px;font-weight:700;display:none;pointer-events:none}
+  #vpTools{position:absolute;right:10px;top:10px;z-index:20;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  #vpTools select{font-family:var(--mono,ui-monospace,monospace);font-size:11px;padding:4px 6px;
+    border:1px solid rgba(0,0,0,.18);border-radius:2px;background:rgba(255,255,255,.92);cursor:pointer}
+  #vpTools .zb{width:30px;height:30px;font-size:15px;line-height:1;padding:0;color:#333;cursor:pointer;
+    border:1px solid rgba(0,0,0,.18);border-radius:2px;background:rgba(255,255,255,.92)}
+  #vpTools .zb:hover{background:#fff}
+  #gHSplit{height:6px;cursor:row-resize;background:var(--line,#DDE1E4);flex-shrink:0}
+  #gHSplit:hover,#gHSplit.on{background:#8FA6B8}
+  #gConsole{height:150px;flex-shrink:0;overflow-y:auto;background:#1B1E21;color:#C9D1D9;
+    font-family:var(--mono,ui-monospace,monospace);font-size:12px;line-height:1.75;padding:8px 12px}
+  #gConsole .warn{color:#E0B84C}
+  #gConsole .err{color:#F08080}
+  @media (max-width:1200px){ #gRight{width:50vw;min-width:340px} }
+  @media (max-width:900px){
+    #gMain{flex-direction:column} #gSplit{display:none}
+    #gRight{width:auto;max-width:none;min-width:0;height:55%;border-top:1px solid var(--line,#DDE1E4)}
+    #gBlockly{min-height:220px}
+  }
+  .stubs{display:none}
+</style>
+</head>
+<body>
+
+<div id="gTop">
+  <span class="title">PIBO 게임 만들기</span>
+  <a class="db" href="index.html" style="text-decoration:none;color:inherit">&#x2190; 체험툴</a>
+  <a class="db" href="dev.html" style="text-decoration:none;color:inherit">개발툴</a>
+  <button class="db run" id="gBtnRun">▶ 실행</button>
+  <button class="db stop" id="gBtnStop" disabled>■ 정지</button>
+  <button class="db" id="gBtnClear">🗑 블록 지우기</button>
+  <span class="sp"></span>
+  <button class="db" id="gBtnSave">💾 저장</button>
+  <button class="db" id="gBtnLoad">📂 불러오기</button>
+  <input type="file" id="gFileIn" accept=".json" style="display:none">
+</div>
+
+<div id="gMain">
+  <div id="gBlockly"></div>
+  <div id="gSplit" title="드래그해서 폭 조절"></div>
+  <div id="gRight">
+    <div id="vp">
+      <canvas id="cv"></canvas>
+      <div id="gHud">
+        <span><span class="lb">점수</span><b id="gScore">0</b></span>
+        <span><span class="lb">목숨</span><b id="gLives">♥♥♥</b></span>
+      </div>
+      <div id="gMsg"></div>
+      <div id="fallBanner" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#B33;color:#fff;padding:6px 18px;border-radius:2px;font-size:12px;font-weight:700;display:none;pointer-events:none">넘어졌습니다</div>
+      <div class="load-ov" id="loadOv">
+        <div class="load-box">
+          <div class="spinner" id="spinner"></div>
+          <div class="load-title" id="loadTitle">불러오는 중</div>
+          <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
+          <div class="ptext" id="ptext"></div>
+        </div>
+      </div>
+      <div class="empty-msg" id="emptyMsg" style="display:none">모델 없음</div>
+      <div id="vpTools">
+        <select id="themePick" title="배경 테마">
+          <option value="desk">책상</option>
+          <option value="dining">식탁</option>
+          <option value="bench">작업대</option>
+        </select>
+        <button class="zb" id="zoomIn"  title="확대">＋</button>
+        <button class="zb" id="zoomOut" title="축소">－</button>
+        <button class="zb" id="zoomFit" title="화면에 맞추기">⤢</button>
+      </div>
+    </div>
+    <div id="gHSplit" title="드래그해서 높이 조절"></div>
+    <div id="gConsole"></div>
+  </div>
+</div>
+
+<!-- 시뮬 모듈이 참조하는 요소들 (게임 화면에선 안 보임) -->
+<div class="stubs">
+  <span id="statusBadge"></span><div id="infoSec"></div><div id="infoRows"></div>
+  <div id="partColorSec"></div><div id="partColors"></div><button id="partResetBtn"></button>
+  <div id="jointsEl"></div><span id="jcount"></span><span id="fpsEl"></span>
+  <input id="lcdText" value=""><input type="color" id="lcdColor" value="#ffffff">
+  <input type="color" id="glassColorL" value="#00e1ff"><input type="color" id="glassColorR" value="#00e1ff">
+  <span id="tlTimeDisp"></span><span id="tlPlayPause"></span>
+  <button id="physBtn"></button><button id="gridBtn"></button>
+  <span id="physEngine"></span><span id="physState"></span><span id="physTilt"></span><span id="physDist"></span>
+  <select id="themeSel"><option value="desk">책상</option></select>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- 시뮬레이터 (체험툴과 완전히 같은 파일 — 수정하지 않음) -->
+<script src="js/config.js"></script>
+<script src="js/dom.js"></script>
+<script src="js/orbit.js"></script>
+<script src="js/loaders.js"></script>
+<script src="js/viewer.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/backdrop.js"></script>
+<script src="js/motion.js"></script>
+<script src="js/pibo_api.js"></script>
+<script src="js/pibo_oled.js"></script>
+<script src="js/motion_names.js"></script>
+
+<!-- Blockly -->
+<script src="blockly/blockly_compressed.js"></script>
+<script src="blockly/blocks_compressed.js"></script>
+<script src="blockly/javascript_compressed.js"></script>
+<script src="blockly/ko2en.js"></script>
+<script>document.write('<scr' + 'ipt src="blockly/' + (lang === 'en' ? 'en' : 'ko') + '.js"><\/scr' + 'ipt>');</script>
+<script src="blockly/js-interpreter.js"></script>
+<script src="blockly/disable-top-blocks.js"></script>
+
+<!-- 게임 전용 (game_ 접두어) -->
+<script src="js/blockly_theme.js"></script>
+<script src="js/game_engine.js"></script>
+<script src="js/game_blocks.js"></script>
+<script src="js/game_gen.js"></script>
+<script src="js/game_toolbox.js"></script>
+<script src="js/game_run.js"></script>
+
+<script>
+const gameWorkspace = Blockly.inject('gBlockly',
+  Object.assign({}, PIBO_BLOCKLY_OPTIONS, { toolbox: GAME_TOOLBOX, media: 'blockly/media/' }));
+
+if (typeof DisableTopBlocks === 'function') new DisableTopBlocks(gameWorkspace).init();
+
+// '게임 시작하면' 블록은 하나만
+gameWorkspace.addChangeListener(ev => {
+  if (ev.type !== Blockly.Events.CREATE) return;
+  const flags = gameWorkspace.getAllBlocks(false).filter(b => b.type === 'game_start');
+  if (flags.length > 1) {
+    const b = gameWorkspace.getBlockById(ev.ids[0]);
+    if (b && b.type === 'game_start') { b.dispose(); gLog("'게임 시작하면' 블록은 하나만 쓸 수 있습니다.", 'warn'); }
+  }
+});
+
+const gRelayout = () => Blockly.svgResize(gameWorkspace);
+window.addEventListener('resize', gRelayout);
+
+function gSplitter(id, onDrag){
+  const h = document.getElementById(id); if(!h) return;
+  h.addEventListener('pointerdown', e => {
+    e.preventDefault(); h.classList.add('on'); h.setPointerCapture(e.pointerId);
+    const move = ev => { onDrag(ev); gRelayout(); };
+    const up = ev => {
+      h.classList.remove('on'); h.releasePointerCapture(ev.pointerId);
+      h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); gRelayout();
+    };
+    h.addEventListener('pointermove', move); h.addEventListener('pointerup', up);
+  });
+}
+gSplitter('gSplit', ev => {
+  const w = window.innerWidth - ev.clientX;
+  document.getElementById('gRight').style.width =
+    Math.max(340, Math.min(window.innerWidth - 300, w)) + 'px';
+});
+gSplitter('gHSplit', ev => {
+  const r = document.getElementById('gRight').getBoundingClientRect();
+  document.getElementById('gConsole').style.height =
+    Math.max(60, Math.min(r.height - 200, r.bottom - ev.clientY)) + 'px';
+});
+
+// 저장 / 불러오기 (게임 전용 — 실물과 호환되지 않으므로 확장자를 구분)
+document.getElementById('gBtnSave').addEventListener('click', () => {
+  const text = JSON.stringify(Blockly.serialization.workspaces.save(gameWorkspace), null, 1);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = 'pibo_game.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  gLog('저장: pibo_game.json');
+});
+document.getElementById('gBtnLoad').addEventListener('click', () => document.getElementById('gFileIn').click());
+document.getElementById('gFileIn').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const fr = new FileReader();
+  fr.onload = ev => {
+    try {
+      Blockly.serialization.workspaces.load(JSON.parse(ev.target.result), gameWorkspace);
+      gLog('불러오기 완료: ' + f.name);
+    } catch (err) { gLog('불러오기 실패: ' + err.message, 'err'); }
+  };
+  fr.readAsText(f); e.target.value = '';
+});
+
+document.getElementById('gBtnRun').addEventListener('click', gameRun);
+document.getElementById('gBtnStop').addEventListener('click', gameStop);
+document.getElementById('gBtnClear').addEventListener('click', () => {
+  if (gameWorkspace.getAllBlocks(false).length && !confirm('작업 중인 블록을 모두 지울까요?')) return;
+  gameStop(); gameWorkspace.clear();
+  try { sessionStorage.removeItem(GAME_SAVE_KEY); } catch (e) {}
+  gLog('블록을 모두 지웠습니다');
+});
+
+// 확대 / 축소 / 테마
+document.getElementById('zoomIn').addEventListener('click', () => { orbit.r = Math.max(.15, orbit.r * 0.82); orbit.update(); });
+document.getElementById('zoomOut').addEventListener('click', () => { orbit.r = Math.min(60, orbit.r * 1.22); orbit.update(); });
+document.getElementById('zoomFit').addEventListener('click', () => {
+  if (robotRoot) orbit.focusBox(new THREE.Box3().setFromObject(robotRoot));
+});
+document.getElementById('themePick').addEventListener('change', function () {
+  if (typeof setTheme === 'function') setTheme(this.value);
+});
+
+// 작업 중인 블록 자동 보관 (탭을 닫으면 사라짐)
+const GAME_SAVE_KEY = 'pibo-game-blocks-v1';
+let gRestoring = false, gSaveTimer = null;
+function gAutosave() {
+  if (gRestoring) return;
+  clearTimeout(gSaveTimer);
+  gSaveTimer = setTimeout(() => {
+    try {
+      const json = Blockly.serialization.workspaces.save(gameWorkspace);
+      const empty = !json.blocks || !json.blocks.blocks || !json.blocks.blocks.length;
+      empty ? sessionStorage.removeItem(GAME_SAVE_KEY)
+            : sessionStorage.setItem(GAME_SAVE_KEY, JSON.stringify(json));
+    } catch (e) {}
+  }, 800);
+}
+(function () {
+  let raw; try { raw = sessionStorage.getItem(GAME_SAVE_KEY); } catch (e) { return; }
+  if (!raw) return;
+  gRestoring = true;
+  try {
+    Blockly.serialization.workspaces.load(JSON.parse(raw), gameWorkspace);
+    gLog('이전에 만들던 게임을 불러왔습니다. 새로 시작하려면 [블록 지우기]');
+  } catch (e) { try { sessionStorage.removeItem(GAME_SAVE_KEY); } catch (e2) {} }
+  finally {
+    gRestoring = false;
+    gameWorkspace.getAllBlocks(false).forEach(b => { delete b.userDisabled; });
+    const top = gameWorkspace.getTopBlocks(false)[0];
+    if (top) gameWorkspace.fireChangeListener(new Blockly.Events.BlockMove(top));
+  }
+})();
+gameWorkspace.addChangeListener(ev => { if (!ev.isUiEvent) gAutosave(); });
+
+gLog('준비 완료 — 블록을 조립하고 ▶ 실행을 누르세요');
+</script>
+
+<script type="module">
+  const SOURCES = ['./lib/rapier.es.js',
+    'https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.14.0/rapier.es.js'];
+  let RAPIER = null;
+  for (const src of SOURCES) {
+    try {
+      const mod = await import(src);
+      const cand = (mod && mod.default) ? mod.default : mod;
+      if (cand && typeof cand.init === 'function') { RAPIER = cand; break; }
+    } catch (e) { console.warn('Rapier load failed:', src, e.message); }
+  }
+  if (RAPIER) {
+    try { await RAPIER.init(); window.RAPIER = RAPIER; window.dispatchEvent(new Event('rapier-ready')); }
+    catch (e) { console.error(e); window.dispatchEvent(new Event('rapier-fail')); }
+  } else window.dispatchEvent(new Event('rapier-fail'));
+</script>
+</body>
+</html>
