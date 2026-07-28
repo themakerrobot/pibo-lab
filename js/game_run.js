@@ -15,12 +15,21 @@ const gameKeys = {};
 const gameQueue = [];
 
 // ── 걷기 설정 ★ 여기만 보면 됨 ★ ──────────────────────────
-// 물리가 켜져 있으면 걷기는 "모션을 재생하고 물리에 맡긴다" — 개발툴에서
-// 걷는 것과 완전히 같은 방식이다. 배속은 1 고정. (1.5배로 올리면 발이
-// 목표각을 못 따라가 한 걸음에 2cm씩 옆으로 밀리고 기울기도 9도까지 뜬다)
-const STEP_M       = 0.063;  // 한 걸음 실측 이동거리(m) — 물리 꺼짐 fallback 에서만 사용
+// 걸음 모션은 개발툴과 똑같이 재생한다(배속 1). 다만 몸의 전진은 코드가 맡는다.
+//
+// ★ 왜 물리에 못 맡기는가 (실측)
+//   forward1 은 발을 4mm 들고 보폭이 14mm 뿐인 '끄는 걸음' 이다.
+//   이 정도로는 물리가 로봇을 앞으로 밀어내지 못한다(오히려 뒤로 밀림).
+//
+// ★ STEP_M 이 미끄러짐을 결정한다
+//   실제 발이 앞으로 나가는 양이 14mm 이므로, STEP_M 이 그보다 클수록
+//   그 차이만큼 발이 바닥에서 끌린다.
+//     0.015 → 끌림 거의 없음 (실물과 동일). 한 칸 1.5cm 라 아주 느림
+//     0.020 → 끌림 6mm.  ← 채택
+//     0.050 → 끌림 36mm. 눈에 확 띄게 미끄러짐
+const STEP_M       = 0.020;  // 한 칸(= 한 걸음) 이동거리(m)
 const TURN_PER_REP = 30;     // 도는 모션 1회 = 몇 도
-const CELL         = STEP_M; // '한 칸' = 한 걸음
+const CELL         = STEP_M;
 
 // 물리 꺼짐 fallback 에서 쓰는 전진 구간.
 // forward1 은 2.4초 동안 다리를 두 번 흔든다 (0.6~1.2초, 1.5~2.1초).
@@ -68,14 +77,11 @@ function gMotionSec(name) {
     .then(kfs => (kfs && kfs.length ? kfs[kfs.length - 1].t : 1.0));
 }
 
-// 한 걸음 — 물리가 켜져 있으면 모션만 재생하고 이동은 물리에 맡긴다.
+// 한 걸음 — 모션을 재생하면서, 다리가 실제로 나가는 구간에만 몸을 전진시킨다.
 function gStepOnce(dir) {
-  const name = dir >= 0 ? 'forward1' : 'backward1';
-  if (Game.physOn()) return Pibo.playMotion(name, 1).catch(() => {});
-  return gStepKinematic(name, dir);   // 물리 꺼짐 fallback
+  return gStepKinematic(dir >= 0 ? 'forward1' : 'backward1', dir);
 }
 
-// fallback: 모션을 재생하면서 다리가 나가는 구간에만 몸을 전진시킨다
 function gStepKinematic(name, dir) {
   const rad = Game.heading * Math.PI / 180;
   const p = Game.robotXZ();
@@ -101,10 +107,13 @@ function gStepKinematic(name, dir) {
 
 // 한 번에 deg 만큼 돌기. 도는 모션을 재생하고 방향은 같은 시간에 걸쳐 돌린다.
 // (물리 ON 이면 game_engine 의 방향고정이 몸을 그 방향으로 맞춰준다)
+// ★ 부호 주의: 블록의 '오른쪽으로'는 +deg 로 들어오는데, 실제 right 모션은
+//   방향각(atan2)을 음수 쪽으로 돌린다. 그래서 heading 은 반대로 준다.
 function gTurnBy(deg) {
-  const dir = deg >= 0 ? 1 : -1;
+  const dir = deg >= 0 ? 1 : -1;      // +1 = 오른쪽
   const abs = Math.abs(deg);
   const name = dir >= 0 ? 'right' : 'left';
+  const hsign = -dir;                 // 오른쪽 = heading 감소
   const reps = Math.max(1, Math.round(abs / TURN_PER_REP));
   const from = Game.heading;
   return gMotionSec(name).then(sec => {
@@ -112,12 +121,12 @@ function gTurnBy(deg) {
     const ramp = () => {
       if (!gameRunning) return;
       const a = Math.min(1, (performance.now() - t0) / total);
-      Game.setHeading(from + dir * abs * gSmooth(a));
+      Game.setHeading(from + hsign * abs * gSmooth(a));
       if (a < 1) requestAnimationFrame(ramp);
     };
     requestAnimationFrame(ramp);
     return Pibo.playMotion(name, reps).catch(() => {});
-  }).then(() => { Game.setHeading(from + dir * abs); });
+  }).then(() => { Game.setHeading(from + hsign * abs); });
 }
 
 // 다음 걸음 자리에 벽이 있는지
@@ -248,7 +257,6 @@ function gameRun() {
   Game.start();
   setGameUI(true);
   gLog('게임 시작 — 방향키로 조종하세요');
-  if (!Game.physOn()) gLog('물리가 꺼져 있어 걷기가 근사 모드로 동작합니다', 'warn');
 
   (function loop() {
     if (!gameRunning) return;
