@@ -304,6 +304,128 @@ function buildWorkbench(){
   return G;
 }
 
+
+// 주행 매트 (아스팔트 도로 + 중앙선 + 횡단보도 + 5cm 격자)
+function texRoadMat(W, D){
+  // 1px = 1mm 스케일로 상판 이동구역 전체를 한 장에 그린다
+  const pw = Math.round(W*1000), ph = Math.round(D*1000);
+  const c = document.createElement('canvas'); c.width = pw; c.height = ph;
+  const g = c.getContext('2d');
+  // 잔디 바탕
+  g.fillStyle = '#4A6B3E'; g.fillRect(0,0,pw,ph);
+  for(let i=0;i<pw*ph/90;i++){
+    g.fillStyle = 'rgba(' + (Math.random()<.5?'58,88,48':'86,120,70') + ',.25)';
+    g.fillRect(Math.random()*pw, Math.random()*ph, 2, 2);
+  }
+  // 도로: 세로 큰길(중앙) + 가로 큰길(중간) 십자
+  const RW = 180;                                  // 도로폭 18cm
+  g.fillStyle = '#3E4247';
+  g.fillRect(pw/2-RW/2, 0, RW, ph);                // 세로
+  g.fillRect(0, ph/2-RW/2, pw, RW);                // 가로
+  // 아스팔트 질감
+  for(let i=0;i<5000;i++){
+    const x=Math.random()*pw, y=Math.random()*ph;
+    const onV = Math.abs(x-pw/2)<RW/2, onH = Math.abs(y-ph/2)<RW/2;
+    if(!onV && !onH) continue;
+    g.fillStyle = 'rgba(' + (Math.random()<.5?'50,54,58':'74,79,84') + ',.4)';
+    g.fillRect(x,y,2,2);
+  }
+  // 도로 경계 흰 실선
+  g.strokeStyle = '#C9CDD1'; g.lineWidth = 6;
+  [[pw/2-RW/2],[pw/2+RW/2]].forEach(function(p){
+    g.beginPath(); g.moveTo(p[0],0); g.lineTo(p[0],ph); g.stroke(); });
+  [[ph/2-RW/2],[ph/2+RW/2]].forEach(function(p){
+    g.beginPath(); g.moveTo(0,p[0]); g.lineTo(pw,p[0]); g.stroke(); });
+  // 중앙 점선 (노란색)
+  g.strokeStyle = '#D8B540'; g.lineWidth = 8; g.setLineDash([60,50]);
+  g.beginPath(); g.moveTo(pw/2,0); g.lineTo(pw/2,ph); g.stroke();
+  g.beginPath(); g.moveTo(0,ph/2); g.lineTo(pw,ph/2); g.stroke();
+  g.setLineDash([]);
+  // 횡단보도 (교차로 네 방향)
+  g.fillStyle = '#C9CDD1';
+  const zw = 24, zl = RW - 24;
+  for(let i=-3;i<=3;i++){
+    const off = i*44;
+    g.fillRect(pw/2+off-zw/2, ph/2-RW/2-90, zw, 70);       // 위
+    g.fillRect(pw/2+off-zw/2, ph/2+RW/2+20, zw, 70);       // 아래
+    g.fillRect(pw/2-RW/2-90, ph/2+off-zw/2, 70, zw);       // 왼
+    g.fillRect(pw/2+RW/2+20, ph/2+off-zw/2, 70, zw);       // 오
+  }
+  // 잔디 위 5cm 보조 격자 (걸음 수 세기용)
+  g.strokeStyle = 'rgba(255,255,255,.10)'; g.lineWidth = 1.5;
+  for(let x=0;x<=pw;x+=50){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,ph); g.stroke(); }
+  for(let y=0;y<=ph;y+=50){ g.beginPath(); g.moveTo(0,y); g.lineTo(pw,y); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.anisotropy = 8;
+  return t;
+}
+
+// ═══ 주행 매트 ═══
+function buildRoadMat(){
+  const G = new THREE.Group();
+  const T = buildTable(G, 1.60, 0.86, 0.74, texLaminate(), 0x6E7378, 0x8A857C, 0xA8ABA6);
+  const MW = 1.10, MD = 0.80;                     // 매트 크기
+  T.add(mkSheet(MW, MD, new THREE.MeshPhongMaterial({ map: texRoadMat(MW, MD), shininess: 3 }), 0, 0));
+  // 모서리 표지 콘 4개 (매트 밖, 이동엔 지장 없음)
+  [[-0.62,-0.30],[-0.62,0.30],[0.62,-0.30],[0.62,0.30]].forEach(function(p){
+    T.add(mkCyl(0.004, 0.028, 0.055, 0xC4622E, p[0], 0.0275, p[1]));
+    T.add(mkCyl(0.030, 0.033, 0.006, 0xC4622E, p[0], 0.003, p[1]));
+  });
+  G.userData.light = { key:0xF6F2E8, keyI:0.56, amb:0.32, hemi:0.20, hemiG:0x767B80,
+                       sky:['#B9BEC2','#8A9095'], keyPos:[1.1, 1.5, 0.9],
+                       fog:['#9BA1A6', 1.2, 3.6] };
+  return G;
+}
+
+// 스모 링 (원형 도효 + 흰 테두리 + 시작선)
+function texSumoRing(size, ringR, W){
+  const pw = Math.round(W*1000);
+  const c = document.createElement('canvas'); c.width = c.height = pw;
+  const g = c.getContext('2d');
+  const cx = pw/2, R = ringR*1000;
+  // 바깥: 짙은 매트
+  g.fillStyle = '#2A2E33'; g.fillRect(0,0,pw,pw);
+  for(let i=0;i<8000;i++){
+    g.fillStyle = 'rgba(' + (Math.random()<.5?'22,26,30':'46,52,58') + ',.3)';
+    g.fillRect(Math.random()*pw, Math.random()*pw, 2, 2);
+  }
+  // 도효 원판 (모래색)
+  g.fillStyle = '#C8A96B';
+  g.beginPath(); g.arc(cx,cx,R,0,6.29); g.fill();
+  for(let i=0;i<6000;i++){
+    const a=Math.random()*6.28, r=Math.sqrt(Math.random())*R;
+    g.fillStyle = 'rgba(' + (Math.random()<.5?'176,146,90':'214,186,124') + ',.35)';
+    g.fillRect(cx+Math.cos(a)*r, cx+Math.sin(a)*r, 2.4, 2.4);
+  }
+  // 흰 경계선 (다와라)
+  g.strokeStyle = '#E8E4DA'; g.lineWidth = 14;
+  g.beginPath(); g.arc(cx,cx,R-10,0,6.29); g.stroke();
+  // 시작선 2개 (중앙)
+  g.strokeStyle = '#8C4A3E'; g.lineWidth = 10;
+  g.beginPath(); g.moveTo(cx-55, cx-R*0.28); g.lineTo(cx+55, cx-R*0.28); g.stroke();
+  g.beginPath(); g.moveTo(cx-55, cx+R*0.28); g.lineTo(cx+55, cx+R*0.28); g.stroke();
+  const t = new THREE.CanvasTexture(c); t.anisotropy = 8;
+  return t;
+}
+
+// ═══ 스모 링 ═══
+function buildSumo(){
+  const G = new THREE.Group();
+  const T = buildTable(G, 1.60, 0.86, 0.74, texWoodTop(96,74,52, 34), 0x4A3A28, 0x8B7F6D, 0xA79B8B);
+  const RING_R = 0.36;                            // 링 반지름 36cm
+  T.add(mkSheet(0.80, 0.80, new THREE.MeshPhongMaterial({ map: texSumoRing(0.8, RING_R, 0.8), shininess: 3 }), 0, 0));
+  // 관중용 미니 깃발
+  [[-0.60,-0.28,0xB05648],[-0.60,0.26,0x3A6E9E],[0.60,-0.26,0xC2A054],[0.60,0.28,0x4F8A5E]].forEach(function(p){
+    T.add(mkCyl(0.003,0.003,0.11, 0x8C9297, p[0], 0.055, p[1]));
+    T.add(mkBox(0.05, 0.032, 0.002, p[2], p[0]+0.026, 0.092, p[1]));
+  });
+  // 게임 규칙용: 링 반지름을 STAGE 에 실어 보낸다 (링 밖 = fallOff 판정에 사용 가능)
+  G.userData.stage.ringR = RING_R;
+  G.userData.light = { key:0xF2E4CE, keyI:0.60, amb:0.30, hemi:0.20, hemiG:0x857A6C,
+                       sky:['#9A8F80','#6E6458'], keyPos:[1.0, 1.6, 0.8],
+                       fog:['#83786A', 1.2, 3.6] };
+  return G;
+}
+
 // ═══ 심플 ═══
 function buildPlain(){
   const G = new THREE.Group();
@@ -328,10 +450,12 @@ function gradTex(top, bottom){
   return t;
 }
 const THEMES = {
-  desk:   { label:'책상',   build: buildDesk },
-  dining: { label:'식탁',   build: buildDining },
-  bench:  { label:'작업대', build: buildWorkbench },
-  plain:  { label:'심플',   build: buildPlain },
+  desk:   { label:'책상',     build: buildDesk },
+  dining: { label:'식탁',     build: buildDining },
+  bench:  { label:'작업대',   build: buildWorkbench },
+  road:   { label:'주행 매트', build: buildRoadMat },
+  sumo:   { label:'스모 링',   build: buildSumo },
+  plain:  { label:'심플',     build: buildPlain },
 };
 let themeGroup = null;
 let gridOn = true;
