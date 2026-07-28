@@ -8,12 +8,14 @@
 //
 // ★ 이동 방식 (v2)
 //   물리가 켜져 있으면 로봇을 코드로 옮기지 않는다. 개발툴에서 걷는 것과
-//   똑같이 forward1 / backward1 모션을 재생하고, 발과 바닥의 마찰로
-//   실제로 걸어간다. 한 걸음(모션 1회) = 약 6.3cm.
-//   대신 '바라보는 방향'만 고정한다 — 이 로봇의 걸음은 한 번에 15도쯤
-//   틀어지기 때문에, 그냥 두면 앞으로 가라고 해도 옆으로 새어 나간다.
+//   똑같이 forward1 / backward1 모션을 재생한다. 다만 이 로봇의 실제
+//   보폭은 한 걸음에 14mm 뿐이고(발도 4mm 밖에 안 든다) 물리만으로는
+//   앞으로 나가지 않으므로, 몸의 전진은 코드가 담당한다.
+//   방향 틀어짐(한 걸음에 12~15도)만 보정하되, 회전축을 디딤발로 잡아
+//   바닥에 붙은 발이 끌리지 않게 한다.
 
-const HEADING_LOCK = true;    // 걸을 때 방향 틀어짐 보정 (끄면 실물처럼 제멋대로 휜다)
+const HEADING_LOCK = true;    // 걸을 때 방향 틀어짐 보정 (끄면 한 걸음마다 12~15도씩 휜다)
+const SWING_MIN_Y  = 0.004;   // 두 발 높이차가 이보다 크면 '한 발로 서 있다'고 본다
 const WALL_H       = 0.06;    // 벽 높이(m)
 
 const Game = {
@@ -125,9 +127,19 @@ const Game = {
     if(Math.abs(d) < 0.01) return;
     d = d * Math.PI / 180;
 
+    // ★ 회전 중심은 몸통이 아니라 '디딤발' 이어야 한다.
+    //   몸통 중심으로 돌리면 바닥에 붙어 있는 발이 매 프레임 끌려간다
+    //   (실측: 다섯 걸음에 448mm 강제 이동 = 화면에서 보이는 미끄러짐).
+    //   디딤발을 축으로 돌리면 그 발은 제자리에 남는다 (실측 0mm).
+    const fl = PHYS.bodies['foot_l_link'], fr = PHYS.bodies['foot_r_link'];
+    if(!fl || !fr) return;
+    const pl = fl.rb.translation(), pr = fr.rb.translation();
+    const dy = pl.y - pr.y;
+    if(Math.abs(dy) < SWING_MIN_Y) return;         // 양발이 다 닿아 있으면 보정 안 함
+    const c = (dy < 0) ? pl : pr;                  // 낮은 쪽 = 디딤발
+
     if(!this._lockQ){ this._lockQ = new THREE.Quaternion(); this._lockV = new THREE.Vector3(); }
     const R = this._lockQ.setFromAxisAngle(new THREE.Vector3(0, 1, 0), d);
-    const c = PHYS.bodies['base_link'].rb.translation();
     for(const k in PHYS.bodies){
       const rb = PHYS.bodies[k].rb;
       const p = rb.translation(), q = rb.rotation();
