@@ -14,26 +14,14 @@ let gameHighlighted = null;
 const gameKeys = {};
 const gameQueue = [];
 
-// ── 걷기 설정 ★ 여기만 보면 됨 ★ ──────────────────────────
-// 걸음 모션은 개발툴과 똑같이 재생한다(배속 1). 다만 몸의 전진은 코드가 맡는다.
-//
-// ★ 왜 물리에 못 맡기는가 (실측)
-//   forward1 은 발을 4mm 들고 보폭이 14mm 뿐인 '끄는 걸음' 이다.
-//   이 정도로는 물리가 로봇을 앞으로 밀어내지 못한다(오히려 뒤로 밀림).
-//
-// ★ STEP_M 이 미끄러짐을 결정한다
-//   실제 발이 앞으로 나가는 양이 14mm 이므로, STEP_M 이 그보다 클수록
-//   그 차이만큼 발이 바닥에서 끌린다.
-//     0.015 → 끌림 거의 없음 (실물과 동일). 한 칸 1.5cm 라 아주 느림
-//     0.020 → 끌림 6mm.  ← 채택
-//     0.050 → 끌림 36mm. 눈에 확 띄게 미끄러짐
-const STEP_M       = 0.020;  // 한 칸(= 한 걸음) 이동거리(m)
-const TURN_PER_REP = 30;     // 도는 모션 1회 = 몇 도
-const CELL         = STEP_M;
-
-// 물리 꺼짐 fallback 에서 쓰는 전진 구간.
-// forward1 은 2.4초 동안 다리를 두 번 흔든다 (0.6~1.2초, 1.5~2.1초).
-const GAIT_PUSH = [[0.25, 0.50], [0.62, 0.88]];
+// ── 걷기 ──────────────────────────────────────────────────
+// 개발툴과 동일: 모션만 재생하고 이동·방향은 전부 물리가 결정한다.
+//   '앞으로 N' = forward1 을 N번 (한 걸음 실측 약 49mm)
+//   '~도 돌기' = left/right 를 필요한 횟수 (1회 실측 약 33도)
+// 실물처럼 걸음마다 방향이 조금 휜다. 물리 OFF 일 때만 근사 이동을 쓴다.
+const STEP_M       = 0.049;  // 물리 OFF 근사 이동 · 벽 검사 거리
+const TURN_PER_REP = 33;     // 도는 모션 1회 = 약 33도 (실측)
+const GAIT_PUSH = [[0.25, 0.50], [0.62, 0.88]];   // 물리 OFF 전진 구간
 
 function gLog(msg, cls) {
   const el = document.getElementById('gConsole');
@@ -70,68 +58,68 @@ Game.on('item', kind => gameQueue.push('evt:' + kind));
 const gSmooth = x => x * x * (3 - 2 * x);
 const gClamp01 = x => (x < 0 ? 0 : x > 1 ? 1 : x);
 
-function gMotionSec(name) {
-  return Promise.resolve()
-    .then(() => loadMotionByName(name))
-    .catch(() => null)
-    .then(kfs => (kfs && kfs.length ? kfs[kfs.length - 1].t : 1.0));
-}
-
-// 한 걸음 — 모션을 재생하면서, 다리가 실제로 나가는 구간에만 몸을 전진시킨다.
+// 한 걸음 — 모션 재생이 전부다. 물리가 걷는다.
 function gStepOnce(dir) {
-  return gStepKinematic(dir >= 0 ? 'forward1' : 'backward1', dir);
+  const name = dir >= 0 ? 'forward1' : 'backward1';
+  if (Game.physOn()) return Pibo.playMotion(name, 1).catch(() => {});
+  return gStepKinematic(name, dir);        // 물리 OFF 근사
 }
 
+// 물리 OFF: 모션을 재생하며 다리가 나가는 구간에만 몸을 전진
 function gStepKinematic(name, dir) {
   const rad = Game.heading * Math.PI / 180;
   const p = Game.robotXZ();
   const tx = p.x + Math.sin(rad) * STEP_M * dir;
   const tz = p.z + Math.cos(rad) * STEP_M * dir;
-  return gMotionSec(name).then(sec => new Promise(resolve => {
-    const dur = sec * 1000, t0 = performance.now();
-    Pibo.playMotion(name, 1).catch(() => {});
-    const share = 1 / GAIT_PUSH.length;
-    const step = now => {
-      if (!gameRunning) { Game.moveRobotTo(tx, tz); return resolve(); }
-      const a = Math.min(1, (now - t0) / dur);
-      let e = 0;
-      for (let i = 0; i < GAIT_PUSH.length; i++)
-        e += share * gSmooth(gClamp01((a - GAIT_PUSH[i][0]) / (GAIT_PUSH[i][1] - GAIT_PUSH[i][0])));
-      Game.moveRobotTo(p.x + (tx - p.x) * e, p.z + (tz - p.z) * e);
-      if (a < 1) requestAnimationFrame(step);
-      else { Game.moveRobotTo(tx, tz); resolve(); }
-    };
-    requestAnimationFrame(step);
-  }));
+  return Promise.resolve()
+    .then(() => loadMotionByName(name)).catch(() => null)
+    .then(kfs => new Promise(resolve => {
+      const dur = (kfs && kfs.length ? kfs[kfs.length - 1].t : 1.0) * 1000;
+      const t0 = performance.now();
+      Pibo.playMotion(name, 1).catch(() => {});
+      const share = 1 / GAIT_PUSH.length;
+      const step = now => {
+        if (!gameRunning) { Game.moveRobotTo(tx, tz); return resolve(); }
+        const a = Math.min(1, (now - t0) / dur);
+        let e = 0;
+        for (let i = 0; i < GAIT_PUSH.length; i++)
+          e += share * gSmooth(gClamp01((a - GAIT_PUSH[i][0]) / (GAIT_PUSH[i][1] - GAIT_PUSH[i][0])));
+        Game.moveRobotTo(p.x + (tx - p.x) * e, p.z + (tz - p.z) * e);
+        if (a < 1) requestAnimationFrame(step);
+        else { Game.moveRobotTo(tx, tz); resolve(); }
+      };
+      requestAnimationFrame(step);
+    }));
 }
 
-// 한 번에 deg 만큼 돌기. 도는 모션을 재생하고 방향은 같은 시간에 걸쳐 돌린다.
-// (물리 ON 이면 game_engine 의 방향고정이 몸을 그 방향으로 맞춰준다)
-// ★ 부호 주의: 블록의 '오른쪽으로'는 +deg 로 들어오는데, 실제 right 모션은
-//   방향각(atan2)을 음수 쪽으로 돌린다. 그래서 heading 은 반대로 준다.
+// 돌기 — right 모션은 화면 기준 오른쪽(방향각 감소)으로 돈다. 물리에 맡긴다.
 function gTurnBy(deg) {
-  const dir = deg >= 0 ? 1 : -1;      // +1 = 오른쪽
+  const dir = deg >= 0 ? 1 : -1;           // +1 = 오른쪽
   const abs = Math.abs(deg);
   const name = dir >= 0 ? 'right' : 'left';
-  const hsign = -dir;                 // 오른쪽 = heading 감소
   const reps = Math.max(1, Math.round(abs / TURN_PER_REP));
-  const from = Game.heading;
-  return gMotionSec(name).then(sec => {
-    const total = sec * reps * 1000, t0 = performance.now();
-    const ramp = () => {
-      if (!gameRunning) return;
-      const a = Math.min(1, (performance.now() - t0) / total);
-      Game.setHeading(from + hsign * abs * gSmooth(a));
-      if (a < 1) requestAnimationFrame(ramp);
-    };
-    requestAnimationFrame(ramp);
-    return Pibo.playMotion(name, reps).catch(() => {});
-  }).then(() => { Game.setHeading(from + hsign * abs); });
+  if (Game.physOn()) return Pibo.playMotion(name, reps).catch(() => {});
+  // 물리 OFF: 모션 시간에 맞춰 방향값만 돌린다
+  return Promise.resolve()
+    .then(() => loadMotionByName(name)).catch(() => null)
+    .then(kfs => {
+      const sec = kfs && kfs.length ? kfs[kfs.length - 1].t : 1.0;
+      const total = sec * reps * 1000, t0 = performance.now();
+      const from = Game.heading, hsign = -dir;
+      const ramp = () => {
+        if (!gameRunning) return;
+        const a = Math.min(1, (performance.now() - t0) / total);
+        Game.setHeading(from + hsign * abs * gSmooth(a));
+        if (a < 1) requestAnimationFrame(ramp);
+      };
+      requestAnimationFrame(ramp);
+      return Pibo.playMotion(name, reps).catch(() => {});
+    });
 }
 
-// 다음 걸음 자리에 벽이 있는지
+// 다음 걸음 자리에 벽이 있는지 — 실제 바라보는 방향 기준
 function gWallAhead(dir) {
-  const rad = Game.heading * Math.PI / 180;
+  const rad = Game.facing() * Math.PI / 180;
   const p = Game.robotXZ();
   return Game.hitWall({ x: p.x + Math.sin(rad) * STEP_M * dir, z: p.z + Math.cos(rad) * STEP_M * dir });
 }
@@ -153,7 +141,7 @@ function buildGameApi(interp, scope) {
   // 큐에서 이벤트 이름을 하나 꺼낸다 (없으면 빈 문자열)
   set('gPoll', () => (gameQueue.length ? gameQueue.shift() : ''));
 
-  // ── 이동 : N 칸이면 N 걸음. 한 걸음마다 걸음 모션이 한 번 재생된다 ──
+  // ── 이동 : N 이면 N 걸음 ──
   setAsync('gMove', (n, cb) => {
     const cells = Math.round(Number(nat(n)) || 0);
     const dir = cells >= 0 ? 1 : -1;
