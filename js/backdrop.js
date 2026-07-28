@@ -426,6 +426,192 @@ function buildSumo(){
   return G;
 }
 
+
+// 축구장 (잔디 + 라인 + 센터서클 + 페널티박스)
+function texSoccer(W, D){
+  const pw = Math.round(W*1000), ph = Math.round(D*1000);
+  const c = document.createElement('canvas'); c.width = pw; c.height = ph;
+  const g = c.getContext('2d');
+  // 잔디 줄무늬 (경기장 방향 = z, 즉 세로)
+  for(let i=0;i<10;i++){
+    g.fillStyle = i%2 ? '#3F7A38' : '#4A8A42';
+    g.fillRect(0, i*ph/10, pw, ph/10+1);
+  }
+  for(let i=0;i<pw*ph/120;i++){
+    g.fillStyle = 'rgba(' + (Math.random()<.5?'52,100,46':'92,150,84') + ',.2)';
+    g.fillRect(Math.random()*pw, Math.random()*ph, 2, 2);
+  }
+  const L = 'rgba(240,244,240,.92)';
+  g.strokeStyle = L; g.lineWidth = 8;
+  const mg = 60;                                     // 터치라인 여백 6cm
+  g.strokeRect(mg, mg, pw-2*mg, ph-2*mg);            // 외곽
+  g.beginPath(); g.moveTo(mg, ph/2); g.lineTo(pw-mg, ph/2); g.stroke();   // 하프라인
+  g.beginPath(); g.arc(pw/2, ph/2, 90, 0, 6.29); g.stroke();              // 센터서클
+  g.fillStyle = L; g.beginPath(); g.arc(pw/2, ph/2, 10, 0, 6.29); g.fill();
+  // 골 에어리어 (앞뒤)
+  const gw = 300, gd = 110;
+  g.strokeRect(pw/2-gw/2, mg, gw, gd);
+  g.strokeRect(pw/2-gw/2, ph-mg-gd, gw, gd);
+  const t = new THREE.CanvasTexture(c); t.anisotropy = 8;
+  return t;
+}
+
+// ═══ 축구장 ═══
+function buildSoccer(){
+  const G = new THREE.Group();
+  const T = buildTable(G, 1.60, 0.86, 0.74, texLaminate(), 0x6E7378, 0x8A857C, 0xA8ABA6);
+  const MW = 1.06, MD = 0.80;
+  T.add(mkSheet(MW, MD, new THREE.MeshPhongMaterial({ map: texSoccer(MW, MD), shininess: 3 }), 0, 0));
+  // 미니 골대 (앞 가장자리 중앙, 로봇 진행 방향의 목표물)
+  function goal(z, flip){
+    const P = new THREE.Group();
+    const mat = new THREE.MeshPhongMaterial({ color: 0xE8EAEC, shininess: 20 });
+    const W2 = 0.24, H = 0.11, R = 0.006;
+    [[-W2/2],[W2/2]].forEach(function(p){
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(R,R,H,10), mat);
+      post.position.set(p[0], H/2, 0); post.castShadow = true; post.userData.prop = true; P.add(post);
+    });
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(R,R,W2,10), mat);
+    bar.rotation.z = Math.PI/2; bar.position.set(0, H, 0);
+    bar.castShadow = true; bar.userData.prop = true; P.add(bar);
+    P.position.set(0, 0, z); if(flip) P.rotation.y = Math.PI;
+    return P;
+  }
+  T.add(goal( MD/2 - 0.035, false));   // 앞 골대
+  T.add(goal(-MD/2 + 0.035, true));    // 뒤 골대
+  // 사이드 응원 깃발
+  [[-0.62,-0.25,0xB05648],[-0.62,0.25,0x3A6E9E],[0.62,-0.25,0xC2A054],[0.62,0.25,0x4F8A5E]].forEach(function(p){
+    T.add(mkCyl(0.003,0.003,0.10, 0x8C9297, p[0], 0.05, p[1]));
+    T.add(mkBox(0.046, 0.03, 0.002, p[2], p[0]+0.024, 0.085, p[1]));
+  });
+  G.userData.light = { key:0xF6F2E8, keyI:0.58, amb:0.32, hemi:0.20, hemiG:0x6E8266,
+                       sky:['#AEC3D6','#7E93A6'], keyPos:[1.0, 1.6, 0.9],
+                       fog:['#8FA0AE', 1.2, 3.6] };
+  return G;
+}
+
+// 우주 기지 (금속 패널 + 발광 라인 + 착륙 패드)
+function texSpace(W, D){
+  const pw = Math.round(W*1000), ph = Math.round(D*1000);
+  const c = document.createElement('canvas'); c.width = pw; c.height = ph;
+  const g = c.getContext('2d');
+  g.fillStyle = '#23272E'; g.fillRect(0,0,pw,ph);
+  // 패널 격자 (12cm) + 리벳
+  g.strokeStyle = 'rgba(10,12,16,.8)'; g.lineWidth = 3;
+  for(let x=0;x<=pw;x+=120){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,ph); g.stroke(); }
+  for(let y=0;y<=ph;y+=120){ g.beginPath(); g.moveTo(0,y); g.lineTo(pw,y); g.stroke(); }
+  g.fillStyle = 'rgba(150,158,168,.5)';
+  for(let x=12;x<pw;x+=120) for(let y=12;y<ph;y+=120){
+    g.beginPath(); g.arc(x,y,3,0,6.29); g.fill();
+    g.beginPath(); g.arc(x+96,y+96,3,0,6.29); g.fill();
+  }
+  for(let i=0;i<pw*ph/150;i++){
+    g.fillStyle = 'rgba(' + (Math.random()<.5?'26,30,38':'58,64,74') + ',.35)';
+    g.fillRect(Math.random()*pw, Math.random()*ph, 2.2, 2.2);
+  }
+  // 발광 유도 라인 (중앙 통로)
+  g.strokeStyle = '#37D6E8'; g.lineWidth = 7;
+  g.shadowColor = '#37D6E8'; g.shadowBlur = 14;
+  [[pw/2-80],[pw/2+80]].forEach(function(p){
+    g.beginPath(); g.moveTo(p[0], 40); g.lineTo(p[0], ph-40); g.stroke(); });
+  // 착륙 패드 (앞쪽 원)
+  g.strokeStyle = '#E8B33C'; g.lineWidth = 9; g.shadowColor = '#E8B33C';
+  g.beginPath(); g.arc(pw/2, ph-190, 120, 0, 6.29); g.stroke();
+  g.shadowBlur = 0;
+  g.font = 'bold 90px monospace'; g.fillStyle = 'rgba(232,179,60,.85)';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('H', pw/2, ph-190);
+  // 위험 빗금 (뒤쪽 모서리)
+  g.save(); g.beginPath(); g.rect(0,0,pw,44); g.clip();
+  for(let x=-60;x<pw+60;x+=44){
+    g.fillStyle = (x/44)%2 ? '#C8A22E' : '#2A2E33';
+    g.save(); g.translate(x,0); g.rotate(0.5); g.fillRect(0,-30,24,110); g.restore();
+  }
+  g.restore();
+  const t = new THREE.CanvasTexture(c); t.anisotropy = 8;
+  return t;
+}
+
+// ═══ 우주 기지 ═══
+function buildSpace(){
+  const G = new THREE.Group();
+  const T = buildTable(G, 1.60, 0.86, 0.74, texSteel(), 0x33383D, 0x3A3F46, 0x272B31);
+  T.add(mkSheet(1.06, 0.80, new THREE.MeshPhongMaterial({ map: texSpace(1.06, 0.80), shininess: 12, specular: 0x223338 }), 0, 0));
+  // 좌측: 미니 로켓
+  T.add(mkCyl(0.030, 0.030, 0.13, 0xD8DCDF, -0.62, 0.065+0.02, -0.10));
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.030, 0.05, 18),
+    new THREE.MeshPhongMaterial({ color: 0xB0483C, shininess: 20 }));
+  nose.position.set(-0.62, 0.155+0.02, -0.10); nose.castShadow = true; nose.userData.prop = true; T.add(nose);
+  [[0],[2.09],[4.19]].forEach(function(a){
+    T.add(mkBox(0.012, 0.05, 0.03, 0xB0483C, -0.62+Math.cos(a[0])*0.033, 0.025+0.02, -0.10+Math.sin(a[0])*0.033, a[0]));
+  });
+  T.add(mkCyl(0.045, 0.052, 0.02, 0x4A5057, -0.62, 0.01, -0.10));   // 발사대
+  // 좌측: 위성 안테나
+  T.add(mkCyl(0.004, 0.004, 0.09, 0x9AA0A6, -0.60, 0.045, 0.24));
+  const dish = new THREE.Mesh(new THREE.SphereGeometry(0.05, 18, 10, 0, 6.3, 0, 0.9),
+    new THREE.MeshPhongMaterial({ color: 0xC9CDD1, side: THREE.DoubleSide, shininess: 26 }));
+  dish.rotation.x = -Math.PI/3; dish.position.set(-0.60, 0.10, 0.24);
+  dish.castShadow = true; dish.userData.prop = true; T.add(dish);
+  // 우측: 연료 탱크 + 컨트롤 박스
+  [[0.59,-0.16,0xB8BDC2],[0.66,-0.16,0xC8A22E]].forEach(function(p){
+    T.add(mkCyl(0.026, 0.026, 0.085, p[2], p[0], 0.0425, p[1]));
+    T.add(mkSphere(0.026, p[2], p[0], 0.085, p[1]));
+  });
+  const box = mkBox(0.11, 0.045, 0.08, 0x2E3338, 0.62, 0.0225, 0.20);
+  T.add(box);
+  [[-0.03,0x37D6E8],[0,0xE8B33C],[0.03,0xB0483C]].forEach(function(p){
+    T.add(mkBox(0.014, 0.004, 0.014, p[1], 0.62+p[0], 0.047, 0.185));
+  });
+  G.userData.light = { key:0xCFE4EE, keyI:0.50, amb:0.26, hemi:0.16, hemiG:0x3A4048,
+                       sky:['#3A4148','#181C22'], keyPos:[0.9, 1.6, 0.7],
+                       fog:['#2A3038', 1.4, 4.2] };
+  return G;
+}
+
+// 주방 조리대 (타일 + 도마)
+function texKitchenTile(){
+  const [c,g] = cvs(256);                            // 256px = 타일 4장
+  g.fillStyle = '#CDC9BE'; g.fillRect(0,0,256,256);
+  for(let i=0;i<2200;i++){
+    g.fillStyle = 'rgba(' + (Math.random()<.5?'182,178,168':'222,218,208') + ',.14)';
+    g.fillRect(Math.random()*256, Math.random()*256, 1.8, 1.8);
+  }
+  g.strokeStyle = 'rgba(148,142,130,.7)'; g.lineWidth = 4;
+  for(let p=0;p<=256;p+=128){
+    g.beginPath(); g.moveTo(p,0); g.lineTo(p,256); g.moveTo(0,p); g.lineTo(256,p); g.stroke();
+  }
+  return mkTex(c, [8, 6]);
+}
+
+// ═══ 주방 조리대 ═══
+function buildKitchen(){
+  const G = new THREE.Group();
+  const T = buildTable(G, 1.60, 0.86, 0.90, texKitchenTile(), 0xBAB5AA, 0x9C9284, 0xC7C2B6);
+  // 이동 구역 = 대형 나무 도마
+  T.add(mkSheet(0.94, 0.70, new THREE.MeshPhongMaterial({ map: texWoodTop(168,130,88, 34), shininess: 4 }), 0, 0));
+  // ── 좌측: 냄비 + 야채 ──
+  T.add(mkCyl(0.062, 0.062, 0.07, 0x87552F, -0.62, 0.055, -0.14));       // 뚝배기
+  T.add(mkCyl(0.066, 0.062, 0.012, 0x6E441F, -0.62, 0.096, -0.14));      // 뚜껑
+  T.add(mkSphere(0.012, 0x5A3A1A, -0.62, 0.108, -0.14));                 // 손잡이
+  T.add(mkSphere(0.034, 0xC0392B, -0.60, 0.034, 0.10));                  // 토마토
+  T.add(mkSphere(0.030, 0xD35400, -0.66, 0.030, 0.13));                  // 당근머리
+  const carrot = mkCyl(0.013, 0.026, 0.10, 0xD35400, -0.66, 0.015, 0.19, Math.PI/2);
+  carrot.rotation.x = Math.PI/2; T.add(carrot);
+  T.add(mkSphere(0.032, 0x7D9B4E, -0.61, 0.032, 0.24));                  // 양배추
+  // ── 우측: 계량컵 + 소금후추 + 행주 ──
+  T.add(mkCyl(0.036, 0.030, 0.075, 0xD8DCDF, 0.60, 0.0375, -0.16));      // 계량컵
+  [[0.66,-0.10,0xE8EAEC],[0.69,-0.16,0x2E3338]].forEach(function(p){     // 소금 · 후추
+    T.add(mkCyl(0.016, 0.018, 0.055, p[2], p[0], 0.0275, p[1]));
+    T.add(mkSphere(0.016, p[2], p[0], 0.058, p[1]));
+  });
+  T.add(mkSheet(0.16, 0.20, new THREE.MeshPhongMaterial({ map: texLinen('#B4715E'), shininess: 2 }), 0.62, 0.18, 0.0015, 0.10));
+  T.add(mkCyl(0.006, 0.006, 0.22, 0x8B6B44, 0.62, 0.006, 0.30, Math.PI/2)); // 나무주걱 대
+  G.userData.light = { key:0xF6ECD8, keyI:0.60, amb:0.32, hemi:0.22, hemiG:0x8A8272,
+                       sky:['#C9C0AE','#998F7C'], keyPos:[1.0, 1.5, 0.9],
+                       fog:['#A39A88', 1.2, 3.6] };
+  return G;
+}
+
 // ═══ 심플 ═══
 function buildPlain(){
   const G = new THREE.Group();
@@ -450,12 +636,15 @@ function gradTex(top, bottom){
   return t;
 }
 const THEMES = {
-  desk:   { label:'책상',     build: buildDesk },
-  dining: { label:'식탁',     build: buildDining },
-  bench:  { label:'작업대',   build: buildWorkbench },
-  road:   { label:'주행 매트', build: buildRoadMat },
-  sumo:   { label:'스모 링',   build: buildSumo },
-  plain:  { label:'심플',     build: buildPlain },
+  desk:    { label:'책상',       build: buildDesk },
+  dining:  { label:'식탁',       build: buildDining },
+  bench:   { label:'작업대',     build: buildWorkbench },
+  road:    { label:'주행 매트',  build: buildRoadMat },
+  sumo:    { label:'스모 링',    build: buildSumo },
+  soccer:  { label:'축구장',     build: buildSoccer },
+  space:   { label:'우주 기지',  build: buildSpace },
+  kitchen: { label:'주방 조리대', build: buildKitchen },
+  plain:   { label:'심플',       build: buildPlain },
 };
 let themeGroup = null;
 let gridOn = true;
