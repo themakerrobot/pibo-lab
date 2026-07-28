@@ -12,15 +12,19 @@
 <header>
   <h1>PIBO 체험툴</h1>
   <span class="badge" id="statusBadge">준비</span>
+  <span style="display:flex;gap:4px;margin-left:10px">
+    <span class="navlink" style="background:#2E3338;color:#fff;border-color:#2E3338;cursor:default">체험툴</span>
+    <a class="navlink" href="dev.html">개발툴</a>
+    <a class="navlink" href="game.html">게임툴</a>
+  </span>
   <span style="flex:1"></span>
-  <a class="navlink" href="dev.html">블록 개발툴 &#x2192;</a>
 </header>
 
 <div class="main">
   <div class="left">
     <div class="sec">
       <div class="sec-title">뷰</div>
-      <select class="tl-select" id="themeSel" style="width:100%;margin-bottom:5px"><option value="desk">배경: 책상</option><option value="dining">배경: 식탁</option><option value="bench">배경: 작업대</option><option value="road">배경: 주행 매트</option><option value="sumo">배경: 스모 링</option><option value="plain">배경: 심플</option></select>
+      <select class="tl-select" id="themeSel" style="width:100%;margin-bottom:5px"><option value="desk">배경: 책상</option><option value="dining">배경: 식탁</option><option value="bench">배경: 작업대</option><option value="road">배경: 주행 매트</option><option value="sumo">배경: 스모 링</option><option value="soccer">배경: 축구장</option><option value="space">배경: 우주 기지</option><option value="kitchen">배경: 주방 조리대</option><option value="plain">배경: 심플</option></select>
       <button class="tb on" id="gridBtn"><span class="ic">&#x22DE;</span>그리드</button>
       <button class="tb" id="ssBtn"><span class="ic">&#x1F4F7;</span>스크린샷</button>
     </div>
