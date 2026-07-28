@@ -5,9 +5,16 @@
 // 그 위에 '게임 규칙'만 얹는다. 어떤 기존 파일도 수정하지 않는다.
 //
 // 좌표: 상판 위 월드 좌표(m). PIBO 정면은 월드 +Z (URDF -Y).
-// 이동은 물리로 걷게 하지 않고 로봇 전체를 직접 옮긴다.
-//  · 걸음 모션은 보여주되 위치는 코드가 결정 → 블록으로 만든 게임이 예측 가능해진다
-//  · 물리 ON 상태로 두면 넘어짐이 그대로 게임 요소가 된다
+//
+// ★ 이동 방식 (v2)
+//   물리가 켜져 있으면 로봇을 코드로 옮기지 않는다. 개발툴에서 걷는 것과
+//   똑같이 forward1 / backward1 모션을 재생하고, 발과 바닥의 마찰로
+//   실제로 걸어간다. 한 걸음(모션 1회) = 약 6.3cm.
+//   대신 '바라보는 방향'만 고정한다 — 이 로봇의 걸음은 한 번에 15도쯤
+//   틀어지기 때문에, 그냥 두면 앞으로 가라고 해도 옆으로 새어 나간다.
+
+const HEADING_LOCK = true;    // 걸을 때 방향 틀어짐 보정 (끄면 실물처럼 제멋대로 휜다)
+const WALL_H       = 0.06;    // 벽 높이(m)
 
 const Game = {
   running: false,
@@ -17,8 +24,7 @@ const Game = {
   goal: null,
   walls: [],
   handlers: {},       // 이벤트 → 콜백 (블록이 등록)
-  speed: 0.12,        // m/s
-  turnSpeed: 120,     // deg/s
+  turnSpeed: 120,     // deg/s (물리 꺼짐 fallback 에서만 사용)
   heading: 0,         // 바라보는 방향(도). 0 = 월드 +Z
   startPos: { x: 0, z: 0 },
   _group: null,
@@ -29,6 +35,8 @@ const Game = {
     const s = (typeof STAGE !== 'undefined' && STAGE) ? STAGE : null;
     return s || { w: 1.6, d: 0.8, cz: 0, clearX: 0.46 };
   },
+
+  physOn(){ return typeof PHYS !== 'undefined' && PHYS.on && PHYS.world && PHYS.bodies['base_link']; },
 
   group(){
     if(!this._group){
@@ -71,30 +79,67 @@ const Game = {
     return { x: robotRoot.position.x, z: robotRoot.position.z };
   },
 
+  // 순간이동 전용. 걸어서 가는 이동은 물리에 맡긴다.
   moveRobotTo(x, z){
     if(!robotRoot) return;
     robotRoot.position.x = x;
     robotRoot.position.z = z;
-    // 물리가 켜져 있으면 강체도 같이 옮겨야 다음 프레임에 되돌아가지 않는다
-    if(typeof PHYS !== 'undefined' && PHYS.on && PHYS.bodies){
-      const base = PHYS.bodies['base_link'];
-      if(base){
-        const t = base.rb.translation();
-        const dx = x - t.x, dz = z - t.z;
-        for(const k in PHYS.bodies){
-          const rb = PHYS.bodies[k].rb, p = rb.translation();
-          rb.setTranslation({ x: p.x + dx, y: p.y, z: p.z + dz }, true);
-          rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
-        }
+    if(this.physOn()){
+      const t = PHYS.bodies['base_link'].rb.translation();
+      const dx = x - t.x, dz = z - t.z;
+      for(const k in PHYS.bodies){
+        const rb = PHYS.bodies[k].rb, p = rb.translation();
+        rb.setTranslation({ x: p.x + dx, y: p.y, z: p.z + dz }, true);
+        rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        rb.setAngvel({ x: 0, y: 0, z: 0 }, true);
       }
     }
   },
 
+  // 바라보는 방향(명령값). 물리가 켜져 있으면 아래 방향고정이 따라오게 한다.
   setHeading(deg){
     this.heading = ((deg % 360) + 360) % 360;
-    if(robotRoot){
-      // 로봇 기본 자세(Z-up URDF → Y-up 씬)에 heading 회전을 얹는다
-      robotRoot.rotation.y = this.heading * Math.PI / 180;
+    if(robotRoot && !this.physOn()) robotRoot.rotation.y = this.heading * Math.PI / 180;
+  },
+
+  // 로봇이 실제로 바라보는 방향(도) — 물리가 결정한 값
+  actualHeading(){
+    if(!this.physOn()) return this.heading;
+    const r = PHYS.bodies['base_link'].rb.rotation();
+    const q = new THREE.Quaternion(r.x, r.y, r.z, r.w);
+    const f = new THREE.Vector3(0, -1, 0).applyQuaternion(q);   // URDF -Y = 로봇 정면
+    return Math.atan2(f.x, f.z) * 180 / Math.PI;
+  },
+
+  // ── 방향 고정 ──
+  // 걸음 모션은 한 번에 15도쯤 몸이 틀어진다. 그대로 두면 "앞으로"가
+  // 옆으로 새는 것처럼 보이므로, 몸 전체를 세로축 기준으로 살짝 되돌린다.
+  // (기울기는 건드리지 않으므로 넘어짐은 그대로 살아 있다)
+  _lockQ: null, _lockV: null,
+  applyHeadingLock(){
+    if(!HEADING_LOCK || !this.running || !this.physOn()) return;
+    if(this.fallen()) return;                      // 넘어졌으면 그대로 둔다
+    let d = this.heading - this.actualHeading();
+    while(d >  180) d -= 360;
+    while(d < -180) d += 360;
+    if(Math.abs(d) < 0.01) return;
+    d = d * Math.PI / 180;
+
+    if(!this._lockQ){ this._lockQ = new THREE.Quaternion(); this._lockV = new THREE.Vector3(); }
+    const R = this._lockQ.setFromAxisAngle(new THREE.Vector3(0, 1, 0), d);
+    const c = PHYS.bodies['base_link'].rb.translation();
+    for(const k in PHYS.bodies){
+      const rb = PHYS.bodies[k].rb;
+      const p = rb.translation(), q = rb.rotation();
+      this._lockV.set(p.x - c.x, 0, p.z - c.z).applyQuaternion(R);
+      rb.setTranslation({ x: c.x + this._lockV.x, y: p.y, z: c.z + this._lockV.z }, true);
+      const nq = R.clone().multiply(new THREE.Quaternion(q.x, q.y, q.z, q.w));
+      rb.setRotation({ x: nq.x, y: nq.y, z: nq.z, w: nq.w }, true);
+      const lv = rb.linvel(), av = rb.angvel();
+      const l2 = this._lockV.set(lv.x, lv.y, lv.z).applyQuaternion(R).clone();
+      rb.setLinvel({ x: l2.x, y: l2.y, z: l2.z }, true);
+      const a2 = this._lockV.set(av.x, av.y, av.z).applyQuaternion(R).clone();
+      rb.setAngvel({ x: a2.x, y: a2.y, z: a2.z }, true);
     }
   },
 
@@ -136,13 +181,24 @@ const Game = {
     return this.goal;
   },
 
+  // 벽 — 물리가 켜져 있으면 진짜로 부딪히는 벽이 된다
   addWall(x, z, w, d){
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.06, d),
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, WALL_H, d),
       new THREE.MeshPhongMaterial({ color: 0x9A6B4F }));
-    m.position.set(x, 0.03, z);
+    m.position.set(x, WALL_H / 2, z);
     m.castShadow = true; m.receiveShadow = true;
     this.group().add(m);
     this.walls.push({ mesh: m, x, z, w, d });
+
+    if(this.physOn() && window.RAPIER){
+      const R = window.RAPIER;
+      const rb = PHYS.world.createRigidBody(
+        R.RigidBodyDesc.fixed().setTranslation(x, WALL_H / 2, z));
+      const cd = R.ColliderDesc.cuboid(w / 2, WALL_H / 2, d / 2)
+        .setFriction(0.8).setRestitution(0);
+      cd.setCollisionGroups(0x00010002);          // 바닥과 같은 그룹
+      PHYS.world.createCollider(cd, rb);
+    }
   },
 
   // ── 판정 ──
@@ -210,5 +266,11 @@ const Game = {
   stop(){ this.running = false; },
 };
 
-// 렌더 루프에 얹는다 (기존 renderLoop 를 감싸지 않고 별도 타이머로)
+// 아이템/골인 판정은 20Hz 면 충분하다
 setInterval(() => Game.tick(), 50);
+
+// 방향 고정은 매 프레임 (물리가 매 프레임 몸을 틀기 때문에 여기서 되돌린다)
+(function headingLoop(){
+  Game.applyHeadingLock();
+  requestAnimationFrame(headingLoop);
+})();
