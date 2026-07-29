@@ -10,7 +10,6 @@
 // · 물건은 전부 좌우 끝(|x| >= 0.50m)에만 배치 → 이동 경로를 막지 않음
 const TOP_T = 0.038;
 const STAGE_SCALE  = 1.2;     // 상판 가로·세로 배율 (높이는 그대로)
-const THEME_ANIM   = true;    // 배경 움직임 ON/OFF
 const CLEAR_HALF_X = 0.46;    // 이동 통로 반폭
 const BACK_GAP     = 0.16;    // 로봇 ~ 뒤 가장자리 거리 (앞쪽으로 걸어갈 공간 확보)
 
@@ -384,18 +383,14 @@ function buildRoadMat(){
   const G = new THREE.Group();
   const T = buildTable(G, 1.60, 0.86, 0.74, texLaminate(), 0x6E7378, 0x8A857C, 0xA8ABA6);
   const MW = 1.10 * STAGE_SCALE, MD = 0.80 * STAGE_SCALE;   // 매트 크기
-  const roadTex = texRoadMat(MW, MD);
-  roadTex.wrapS = roadTex.wrapT = THREE.RepeatWrapping;
   T.add(mkSheet(MW / STAGE_SCALE, MD / STAGE_SCALE,
-    new THREE.MeshPhongMaterial({ map: roadTex, shininess: 3 }), 0, 0));
+    new THREE.MeshPhongMaterial({ map: texRoadMat(MW, MD), shininess: 3 }), 0, 0));
   // 모서리 표지 콘 4개 (매트 밖, 이동엔 지장 없음)
   [[-0.62,-0.30],[-0.62,0.30],[0.62,-0.30],[0.62,0.30]].forEach(function(p){
     T.add(mkCyl(0.004, 0.028, 0.055, 0xC4622E, p[0], 0.0275, p[1]));
     T.add(mkCyl(0.030, 0.033, 0.006, 0xC4622E, p[0], 0.003, p[1]));
   });
   applyStageScale(T);
-  // 도로 무늬를 뒤로 흘려보낸다 (연출 전용 — 로봇 좌표·판정에는 영향 없음)
-  G.userData.animate = function(t){ roadTex.offset.y = (t * 0.035) % 1; };
   G.userData.light = { key:0xF6F2E8, keyI:0.56, amb:0.32, hemi:0.20, hemiG:0x767B80,
                        sky:['#B9BEC2','#8A9095'], keyPos:[1.1, 1.5, 0.9],
                        fog:['#9BA1A6', 1.2, 3.6] };
@@ -440,18 +435,13 @@ function buildSumo(){
   const RING_R = 0.36;                            // 링 반지름 36cm
   T.add(mkSheet(0.80, 0.80, new THREE.MeshPhongMaterial({ map: texSumoRing(0.8, RING_R, 0.8), shininess: 3 }), 0, 0));
   // 관중용 미니 깃발
-  const sumoFlags = [];
   [[-0.60,-0.28,0xB05648],[-0.60,0.26,0x3A6E9E],[0.60,-0.26,0xC2A054],[0.60,0.28,0x4F8A5E]].forEach(function(p){
     T.add(mkCyl(0.003,0.003,0.11, 0x8C9297, p[0], 0.055, p[1]));
-    const f = mkBox(0.05, 0.032, 0.002, p[2], p[0]+0.026, 0.092, p[1]);
-    T.add(f); sumoFlags.push(f);
+    T.add(mkBox(0.05, 0.032, 0.002, p[2], p[0]+0.026, 0.092, p[1]));
   });
   // 게임 규칙용: 링 반지름을 STAGE 에 실어 보낸다 (링 밖 = fallOff 판정에 사용 가능)
   G.userData.stage.ringR = RING_R * STAGE_SCALE;
   applyStageScale(T);
-  G.userData.animate = function(t){
-    sumoFlags.forEach(function(f, i){ f.rotation.y = Math.sin(t * 2.2 + i) * 0.35; });
-  };
   G.userData.light = { key:0xF2E4CE, keyI:0.60, amb:0.30, hemi:0.20, hemiG:0x857A6C,
                        sky:['#9A8F80','#6E6458'], keyPos:[1.0, 1.6, 0.8],
                        fog:['#83786A', 1.2, 3.6] };
@@ -513,16 +503,11 @@ function buildSoccer(){
   T.add(goal( MD/2 - 0.035, false));   // 앞 골대
   T.add(goal(-MD/2 + 0.035, true));    // 뒤 골대
   // 사이드 응원 깃발
-  const socFlags = [];
   [[-0.62,-0.25,0xB05648],[-0.62,0.25,0x3A6E9E],[0.62,-0.25,0xC2A054],[0.62,0.25,0x4F8A5E]].forEach(function(p){
     T.add(mkCyl(0.003,0.003,0.10, 0x8C9297, p[0], 0.05, p[1]));
-    const f = mkBox(0.046, 0.03, 0.002, p[2], p[0]+0.024, 0.085, p[1]);
-    T.add(f); socFlags.push(f);
+    T.add(mkBox(0.046, 0.03, 0.002, p[2], p[0]+0.024, 0.085, p[1]));
   });
   applyStageScale(T);
-  G.userData.animate = function(t){
-    socFlags.forEach(function(f, i){ f.rotation.y = Math.sin(t * 2.6 + i * 1.3) * 0.4; });
-  };
   G.userData.light = { key:0xF6F2E8, keyI:0.58, amb:0.32, hemi:0.20, hemiG:0x6E8266,
                        sky:['#AEC3D6','#7E93A6'], keyPos:[1.0, 1.6, 0.9],
                        fog:['#8FA0AE', 1.2, 3.6] };
@@ -576,10 +561,8 @@ function buildSpace(){
   const G = new THREE.Group();
   const T = buildTable(G, 1.60, 0.86, 0.74, texSteel(), 0x33383D, 0x3A3F46, 0x272B31);
   const SW = 1.06 * STAGE_SCALE, SD = 0.80 * STAGE_SCALE;
-  const spaceTex = texSpace(SW, SD);
-  spaceTex.wrapS = spaceTex.wrapT = THREE.RepeatWrapping;
   T.add(mkSheet(1.06, 0.80, new THREE.MeshPhongMaterial({
-    map: spaceTex, shininess: 12, specular: 0x223338 }), 0, 0));
+    map: texSpace(SW, SD), shininess: 12, specular: 0x223338 }), 0, 0));
   // 좌측: 미니 로켓
   T.add(mkCyl(0.030, 0.030, 0.13, 0xD8DCDF, -0.62, 0.065+0.02, -0.10));
   const nose = new THREE.Mesh(new THREE.ConeGeometry(0.030, 0.05, 18),
@@ -595,7 +578,6 @@ function buildSpace(){
     new THREE.MeshPhongMaterial({ color: 0xC9CDD1, side: THREE.DoubleSide, shininess: 26 }));
   dish.rotation.x = -Math.PI/3; dish.position.set(-0.60, 0.10, 0.24);
   dish.castShadow = true; dish.userData.prop = true; T.add(dish);
-  const spaceDish = dish;
   // 우측: 연료 탱크 + 컨트롤 박스
   [[0.59,-0.16,0xB8BDC2],[0.66,-0.16,0xC8A22E]].forEach(function(p){
     T.add(mkCyl(0.026, 0.026, 0.085, p[2], p[0], 0.0425, p[1]));
@@ -603,20 +585,12 @@ function buildSpace(){
   });
   const box = mkBox(0.11, 0.045, 0.08, 0x2E3338, 0.62, 0.0225, 0.20);
   T.add(box);
-  const leds = [];
   [[-0.03,0x37D6E8],[0,0xE8B33C],[0.03,0xB0483C]].forEach(function(p){
     const L2 = mkBox(0.014, 0.004, 0.014, p[1], 0.62+p[0], 0.047, 0.185);
     L2.material.emissive = new THREE.Color(p[1]);
-    T.add(L2); leds.push(L2);
+    T.add(L2);
   });
   applyStageScale(T);
-  G.userData.animate = function(t){
-    spaceTex.offset.y = (t * 0.05) % 1;                     // 유도 라인이 흐른다
-    spaceDish.rotation.y = t * 0.5;                          // 위성 안테나 회전
-    leds.forEach(function(L2, i){                            // 컨트롤 박스 LED
-      L2.material.emissiveIntensity = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(t * 3 + i * 2.1));
-    });
-  };
   G.userData.light = { key:0xCFE4EE, keyI:0.50, amb:0.26, hemi:0.16, hemiG:0x3A4048,
                        sky:['#3A4148','#181C22'], keyPos:[0.9, 1.6, 0.7],
                        fog:['#2A3038', 1.4, 4.2] };
@@ -837,12 +811,3 @@ loadRobot = async function(){
 
 setTheme('desk');
 
-// ── 배경 움직임 구동 ──
-// viewer.js 의 렌더 루프를 건드리지 않고 여기서 자체적으로 돈다.
-// 연출 전용이라 로봇 좌표·물리·게임 판정에는 전혀 영향이 없다.
-(function themeAnimLoop(){
-  requestAnimationFrame(themeAnimLoop);
-  if(!THEME_ANIM || !themeGroup) return;
-  const fn = themeGroup.userData.animate;
-  if(fn) { try { fn(performance.now() / 1000); } catch(e){} }
-})();
