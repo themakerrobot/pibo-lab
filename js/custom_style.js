@@ -79,3 +79,59 @@
   const t = setInterval(() => { apply(); if (applied) clearInterval(t); }, 300);
   setTimeout(() => clearInterval(t), 30000);   // 30초 안에 로드 안 되면 포기
 })();
+
+// ═══════════════════════════════════════════════════════════
+// 카메라 시점 기억 — 새로고침해도 마지막 확대/축소·각도를 유지
+// ═══════════════════════════════════════════════════════════
+// 페이지마다 화면 비율이 달라서 키를 페이지별로 나눈다.
+(function () {
+  const PAGE = (location.pathname.split('/').pop() || 'index').replace(/\.html$/, '');
+  const KEY = 'pibo-view-v1:' + PAGE;
+
+  function read() {
+    try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }
+  }
+  function write(v) {
+    try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {}
+  }
+  function snap() {
+    if (typeof orbit === 'undefined' || !orbit) return null;
+    return { r: orbit.r, phi: orbit.phi, theta: orbit.theta,
+             tx: orbit.target.x, ty: orbit.target.y, tz: orbit.target.z };
+  }
+  const sig = v => v ? [v.r, v.phi, v.theta, v.tx, v.ty, v.tz].map(n => n.toFixed(4)).join(',') : '';
+
+  let restored = false, last = '';
+
+  // 로봇 로드 후 viewer 가 화면 맞추기를 한 번 하므로, 그 뒤에 복원한다
+  function tryRestore() {
+    if (restored) return;
+    if (typeof orbit === 'undefined' || !orbit) return;
+    if (typeof robotRoot === 'undefined' || !robotRoot) return;
+    if (typeof allMeshes === 'undefined' || !allMeshes.length) return;
+    restored = true;
+    setTimeout(() => {
+      const v = read();
+      if (v && isFinite(v.r)) {
+        orbit.r = Math.max(0.15, Math.min(60, v.r));
+        orbit.phi = v.phi; orbit.theta = v.theta;
+        orbit.target.set(v.tx, v.ty, v.tz);
+        orbit.update();
+      }
+      last = sig(snap());
+    }, 500);
+  }
+  const t1 = setInterval(() => { tryRestore(); if (restored) clearInterval(t1); }, 250);
+  setTimeout(() => clearInterval(t1), 30000);
+
+  // 바뀌면 저장 (휠·드래그·버튼·화면맞추기 전부 여기서 잡힌다)
+  setInterval(() => {
+    if (!restored) return;
+    const v = snap();
+    if (!v) return;
+    const s2 = sig(v);
+    if (s2 === last) return;
+    last = s2;
+    write(v);
+  }, 600);
+})();

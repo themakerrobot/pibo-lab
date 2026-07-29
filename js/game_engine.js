@@ -124,10 +124,8 @@ const Game = {
     box:     { label: '상자',   colour: 0x8C6B48 },
     star:    { label: '별',     colour: 0xF2D14B },
     key:     { label: '열쇠',   colour: 0xD9B44A },
-    flag:    { label: '깃발',   colour: 0xC4483C },
-    trash:   { label: '휴지통', colour: 0x5E8C6A },
+    trash:   { label: '휴지통', colour: 0xC0C6CC },
     ball:    { label: '공',     colour: 0xF2F4F6 },
-    battery: { label: '배터리', colour: 0x4FBF6A },
   },
 
   _mat(c, glow){
@@ -181,31 +179,47 @@ const Game = {
       P(G, new THREE.BoxGeometry(0.004, 0.012, 0.004), mat, 0, 0.022, -0.026);
       P(G, new THREE.BoxGeometry(0.004, 0.012, 0.004), mat, 0, 0.022, -0.033);
 
-    } else if(kind === 'flag'){
-      P(G, new THREE.CylinderGeometry(0.0028, 0.0028, 0.11, 10), this._mat(0xD8DCDF, 0.1), 0, 0.055, 0);
-      const f = P(G, new THREE.PlaneGeometry(0.05, 0.032), new THREE.MeshPhongMaterial({
-        color: c, emissive: c, emissiveIntensity: 0.35, side: THREE.DoubleSide }), 0.025, 0.093, 0);
-      f.castShadow = true;
-      P(G, new THREE.CylinderGeometry(0.008, 0.010, 0.006, 12), this._mat(0x9AA0A6, 0.1), 0, 0.003, 0);
-
     } else if(kind === 'trash'){
-      const mat = this._mat(c, 0.15);
-      P(G, new THREE.CylinderGeometry(0.028, 0.022, 0.048, 16, 1, true), mat, 0, 0.024, 0);
-      P(G, new THREE.CylinderGeometry(0.022, 0.022, 0.003, 16), mat, 0, 0.002, 0);
-      P(G, new THREE.TorusGeometry(0.028, 0.004, 8, 20), this._mat(0x3E6B4C, 0.15), 0, 0.048, 0, Math.PI / 2);
+      // 옆면은 뚫린 원통이라 위에서 보면 뒷면이 안 그려져 투명하게 보인다 → DoubleSide
+      const mat = new THREE.MeshPhongMaterial({
+        color: c, emissive: c, emissiveIntensity: 0.12,
+        shininess: 90, specular: 0x9AA0A6, side: THREE.DoubleSide });
+      P(G, new THREE.CylinderGeometry(0.028, 0.022, 0.048, 18, 1, true), mat, 0, 0.024, 0);
+      P(G, new THREE.CylinderGeometry(0.0225, 0.0225, 0.003, 18),
+        this._mat(0x8B9299, 0.08), 0, 0.002, 0);                      // 바닥
+      P(G, new THREE.TorusGeometry(0.0275, 0.0035, 8, 22),
+        this._mat(0x8B9299, 0.1), 0, 0.048, 0, Math.PI / 2);          // 테두리
+      // 세로 골 3줄
+      for(let i = 0; i < 3; i++){
+        const a2 = i * Math.PI * 2 / 3;
+        P(G, new THREE.BoxGeometry(0.003, 0.040, 0.003), this._mat(0x8B9299, 0.08),
+          Math.cos(a2) * 0.026, 0.024, Math.sin(a2) * 0.026);
+      }
 
     } else if(kind === 'ball'){
-      P(G, new THREE.SphereGeometry(0.030, 18, 14), this._mat(c, 0.18), 0, 0.030, 0);
-      const dk = this._mat(0x2E3338, 0.05);
-      P(G, new THREE.TorusGeometry(0.030, 0.0035, 6, 24), dk, 0, 0.030, 0, Math.PI / 2);
-      P(G, new THREE.TorusGeometry(0.030, 0.0035, 6, 24), dk, 0, 0.030, 0, Math.PI / 2, 0, Math.PI / 2);
+      // 축구공 — 흰 구 위에 정이십면체 꼭짓점 12곳에 검정 오각형을 붙인다
+      const R = 0.030;
+      P(G, new THREE.SphereGeometry(R, 24, 18), new THREE.MeshPhongMaterial({
+        color: 0xF4F6F8, emissive: 0xF4F6F8, emissiveIntensity: 0.12, shininess: 40 }),
+        0, R + 0.0018, 0);
+      const dk = new THREE.MeshPhongMaterial({ color: 0x23272B, shininess: 20 });
+      const PH = 1.61803399;
+      const verts = [];
+      [[0, 1, PH], [0, -1, PH], [0, 1, -PH], [0, -1, -PH],
+       [1, PH, 0], [-1, PH, 0], [1, -PH, 0], [-1, -PH, 0],
+       [PH, 0, 1], [-PH, 0, 1], [PH, 0, -1], [-PH, 0, -1]].forEach(function(v){
+        verts.push(new THREE.Vector3(v[0], v[1], v[2]).normalize());
+      });
+      const pent = new THREE.CircleGeometry(R * 0.40, 5);
+      verts.forEach(function(n2){
+        const m = new THREE.Mesh(pent, dk);
+        m.position.copy(n2).multiplyScalar(R * 0.995);
+        m.position.y += R + 0.0018;
+        m.lookAt(n2.clone().multiplyScalar(R * 2).setY(n2.y * R * 2 + R + 0.0018));
+        G.add(m);
+      });
 
-    } else if(kind === 'battery'){
-      P(G, new THREE.CylinderGeometry(0.019, 0.019, 0.050, 16), this._mat(c, 0.3), 0, 0.025, 0);
-      P(G, new THREE.CylinderGeometry(0.019, 0.019, 0.010, 16), this._mat(0x2E3338, 0.1), 0, 0.045, 0);
-      P(G, new THREE.CylinderGeometry(0.007, 0.007, 0.006, 12), this._mat(0xC9CDD1, 0.2), 0, 0.053, 0);
-
-    } else {   // coin — 세워서 돌아가게. 원래 코드는 y=0.006 이라 절반이 상판에 묻혀 있었다
+        } else {   // coin — 세워서 돌아가게. 원래 코드는 y=0.006 이라 절반이 상판에 묻혀 있었다
       P(G, new THREE.CylinderGeometry(0.030, 0.030, 0.010, 20), this._mat(c), 0, 0.030, 0, Math.PI / 2);
       P(G, new THREE.TorusGeometry(0.0265, 0.0035, 6, 22), this._mat(0xC4903A, 0.3), 0, 0.030, 0);
     }
