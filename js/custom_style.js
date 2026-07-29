@@ -135,3 +135,39 @@
     write(v);
   }, 600);
 })();
+
+// ═══════════════════════════════════════════════════════════
+// 안개 시작 거리 — 지금 보고 있는 거리에서 축소 5번 눌러야 뿌옇게
+// ═══════════════════════════════════════════════════════════
+// 테마의 fog near/far 는 고정값(예: 1.2 ~ 3.6)이라, 카메라가 조금만
+// 물러나도 바로 안개에 들어간다. 현재 시점 거리를 기준으로 다시 잡는다.
+(function () {
+  const FOG_STEPS = 5;        // 축소 몇 번 만에 안개가 시작될지
+  const ZOOM_STEP = 1.22;     // 축소 버튼 1회 배율 (dev/index 의 zoomBy 와 동일)
+
+  function adjustFog() {
+    if (typeof scene === 'undefined' || !scene || !scene.fog) return;
+    if (typeof orbit === 'undefined' || !orbit || !isFinite(orbit.r)) return;
+    const ratio = (scene.fog.far / scene.fog.near) || 3;   // 테마가 정한 안개 두께 비율은 유지
+    const near = orbit.r * Math.pow(ZOOM_STEP, FOG_STEPS);
+    scene.fog.near = near;
+    scene.fog.far = near * ratio;
+  }
+  window.piboAdjustFog = adjustFog;
+
+  // 테마를 바꾸면 안개가 테마 기본값으로 되돌아가므로 다시 잡아준다
+  if (typeof setTheme === 'function') {
+    const _orig = setTheme;
+    setTheme = function (k) { _orig(k); adjustFog(); };
+  }
+
+  // 로봇 로드 + 시점 복원이 끝난 뒤 한 번
+  const t = setInterval(() => {
+    if (typeof orbit === 'undefined' || !orbit) return;
+    if (typeof robotRoot === 'undefined' || !robotRoot) return;
+    if (typeof allMeshes === 'undefined' || !allMeshes.length) return;
+    clearInterval(t);
+    setTimeout(adjustFog, 700);      // 시점 복원(500ms) 뒤에
+  }, 250);
+  setTimeout(() => clearInterval(t), 30000);
+})();
