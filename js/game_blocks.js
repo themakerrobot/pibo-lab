@@ -37,6 +37,8 @@ Blockly.defineBlocksWithJsonArray([
     args0: [{
       type: 'field_dropdown', name: 'EVT',
       options: [['동전', 'coin'], ['보석', 'gem'], ['하트', 'heart'], ['상자', 'box'],
+                ['별', 'star'], ['열쇠', 'key'], ['깃발', 'flag'], ['휴지통', 'trash'],
+                ['공', 'ball'], ['배터리', 'battery'],
                 ['골인 지점', 'goal'], ['넘어졌을 때', 'fall'], ['상판 밖으로 나갔을 때', 'fallOff']],
     }],
     message1: '%1',
@@ -119,7 +121,9 @@ Blockly.defineBlocksWithJsonArray([
     args0: [
       { type: 'field_image', src: 'svg/database-solid.svg', width: 22, height: 22 },
       { type: 'field_dropdown', name: 'KIND',
-        options: [['동전', 'coin'], ['보석', 'gem'], ['하트', 'heart'], ['상자', 'box']] },
+        options: [['동전', 'coin'], ['보석', 'gem'], ['하트', 'heart'], ['상자', 'box'],
+        ['별', 'star'], ['열쇠', 'key'], ['깃발', 'flag'], ['휴지통', 'trash'],
+        ['공', 'ball'], ['배터리', 'battery']] },
       { type: 'input_value', name: 'X', check: 'Number' },
       { type: 'input_value', name: 'Z', check: 'Number' },
     ],
@@ -133,7 +137,9 @@ Blockly.defineBlocksWithJsonArray([
     args0: [
       { type: 'field_image', src: 'svg/database-solid.svg', width: 22, height: 22 },
       { type: 'field_dropdown', name: 'KIND',
-        options: [['동전', 'coin'], ['보석', 'gem'], ['하트', 'heart'], ['상자', 'box']] },
+        options: [['동전', 'coin'], ['보석', 'gem'], ['하트', 'heart'], ['상자', 'box'],
+        ['별', 'star'], ['열쇠', 'key'], ['깃발', 'flag'], ['휴지통', 'trash'],
+        ['공', 'ball'], ['배터리', 'battery']] },
       { type: 'input_value', name: 'N', check: 'Number' },
     ],
     inputsInline: true,
@@ -301,7 +307,9 @@ Blockly.defineBlocksWithJsonArray([
     type: 'game_item_left',
     message0: '남은 %1 개수',
     args0: [{ type: 'field_dropdown', name: 'KIND',
-      options: [['전체', 'any'], ['동전', 'coin'], ['보석', 'gem'], ['하트', 'heart'], ['상자', 'box']] }],
+      options: [['전체', 'any'], ['동전', 'coin'], ['보석', 'gem'], ['하트', 'heart'], ['상자', 'box'],
+        ['별', 'star'], ['열쇠', 'key'], ['깃발', 'flag'], ['휴지통', 'trash'],
+        ['공', 'ball'], ['배터리', 'battery']] }],
     output: 'Number', colour: game_colour.sense,
   },
   {

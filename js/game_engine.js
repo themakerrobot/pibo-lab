@@ -61,11 +61,13 @@ const Game = {
     const g = this.group();
     while(g.children.length){
       const o = g.children.pop();
-      if(o.geometry) o.geometry.dispose();
-      if(o.material){
-        const ms = Array.isArray(o.material) ? o.material : [o.material];
-        ms.forEach(m => m.dispose());
-      }
+      o.traverse(n => {
+        if(n.geometry) n.geometry.dispose();
+        if(n.material){
+          const ms = Array.isArray(n.material) ? n.material : [n.material];
+          ms.forEach(m => m.dispose());
+        }
+      });
       g.remove(o);
     }
     this.items = []; this.goal = null; this.walls = [];
@@ -113,21 +115,109 @@ const Game = {
   },
 
   // ── 오브젝트 만들기 ──
-  addItem(x, z, kind){
-    const colours = { coin: 0xE8B33C, gem: 0x4FA8D8, heart: 0xD8556A, box: 0x8C6B48 };
-    const c = colours[kind] || 0xE8B33C;
-    let geo;
-    if(kind === 'gem')       geo = new THREE.OctahedronGeometry(0.028);
-    else if(kind === 'heart')geo = new THREE.SphereGeometry(0.028, 14, 10);
-    else if(kind === 'box')  geo = new THREE.BoxGeometry(0.05, 0.05, 0.05);
-    else                     geo = new THREE.CylinderGeometry(0.03, 0.03, 0.010, 20);
-    const m = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({
-      color: c, emissive: c, emissiveIntensity: 0.35, shininess: 60 }));
-    m.position.set(x, kind === 'coin' ? 0.006 : 0.03, z);
-    if(kind === 'coin') m.rotation.x = Math.PI / 2;
+  // ── 아이템 10종 ──
+  // 모두 Group 으로 만든다. 밑면이 y=0 에 오도록 안에서 높이를 잡는다.
+  ITEM_INFO: {
+    coin:    { label: '동전',   colour: 0xE8B33C },
+    gem:     { label: '보석',   colour: 0x4FA8D8 },
+    heart:   { label: '하트',   colour: 0xD8556A },
+    box:     { label: '상자',   colour: 0x8C6B48 },
+    star:    { label: '별',     colour: 0xF2D14B },
+    key:     { label: '열쇠',   colour: 0xD9B44A },
+    flag:    { label: '깃발',   colour: 0xC4483C },
+    trash:   { label: '휴지통', colour: 0x5E8C6A },
+    ball:    { label: '공',     colour: 0xF2F4F6 },
+    battery: { label: '배터리', colour: 0x4FBF6A },
+  },
+
+  _mat(c, glow){
+    return new THREE.MeshPhongMaterial({
+      color: c, emissive: c, emissiveIntensity: glow === undefined ? 0.35 : glow, shininess: 60 });
+  },
+  _part(G, geo, mat, x, y, z, rx, ry, rz){
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x || 0, y || 0, z || 0);
+    if(rx) m.rotation.x = rx;
+    if(ry) m.rotation.y = ry;
+    if(rz) m.rotation.z = rz;
     m.castShadow = true;
-    this.group().add(m);
-    const it = { mesh: m, x, z, kind, taken: false };
+    G.add(m);
+    return m;
+  },
+
+  buildItem(kind){
+    const info = this.ITEM_INFO[kind] || this.ITEM_INFO.coin;
+    const c = info.colour;
+    const G = new THREE.Group();
+    const P = this._part.bind(this);
+
+    if(kind === 'gem'){
+      P(G, new THREE.OctahedronGeometry(0.028), this._mat(c), 0, 0.03, 0);
+
+    } else if(kind === 'heart'){
+      P(G, new THREE.SphereGeometry(0.028, 14, 10), this._mat(c), 0, 0.03, 0);
+
+    } else if(kind === 'box'){
+      P(G, new THREE.BoxGeometry(0.05, 0.05, 0.05), this._mat(c, 0.2), 0, 0.025, 0);
+      P(G, new THREE.BoxGeometry(0.052, 0.008, 0.052), this._mat(0xC9A87C, 0.2), 0, 0.05, 0);
+
+    } else if(kind === 'star'){
+      const sh = new THREE.Shape();
+      for(let i = 0; i < 10; i++){
+        const r = (i % 2) ? 0.013 : 0.030;
+        const a2 = Math.PI / 2 + i * Math.PI / 5;
+        const px = Math.cos(a2) * r, py = Math.sin(a2) * r;
+        i ? sh.lineTo(px, py) : sh.moveTo(px, py);
+      }
+      sh.closePath();
+      const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.008, bevelEnabled: false });
+      geo.center();
+      P(G, geo, this._mat(c, 0.55), 0, 0.033, 0);
+
+    } else if(kind === 'key'){
+      const mat = this._mat(c, 0.3);
+      P(G, new THREE.TorusGeometry(0.012, 0.004, 8, 18), mat, 0, 0.028, 0.016);
+      P(G, new THREE.CylinderGeometry(0.004, 0.004, 0.045, 10), mat, 0, 0.028, -0.012, Math.PI / 2);
+      P(G, new THREE.BoxGeometry(0.004, 0.012, 0.004), mat, 0, 0.022, -0.026);
+      P(G, new THREE.BoxGeometry(0.004, 0.012, 0.004), mat, 0, 0.022, -0.033);
+
+    } else if(kind === 'flag'){
+      P(G, new THREE.CylinderGeometry(0.0028, 0.0028, 0.11, 10), this._mat(0xD8DCDF, 0.1), 0, 0.055, 0);
+      const f = P(G, new THREE.PlaneGeometry(0.05, 0.032), new THREE.MeshPhongMaterial({
+        color: c, emissive: c, emissiveIntensity: 0.35, side: THREE.DoubleSide }), 0.025, 0.093, 0);
+      f.castShadow = true;
+      P(G, new THREE.CylinderGeometry(0.008, 0.010, 0.006, 12), this._mat(0x9AA0A6, 0.1), 0, 0.003, 0);
+
+    } else if(kind === 'trash'){
+      const mat = this._mat(c, 0.15);
+      P(G, new THREE.CylinderGeometry(0.028, 0.022, 0.048, 16, 1, true), mat, 0, 0.024, 0);
+      P(G, new THREE.CylinderGeometry(0.022, 0.022, 0.003, 16), mat, 0, 0.002, 0);
+      P(G, new THREE.TorusGeometry(0.028, 0.004, 8, 20), this._mat(0x3E6B4C, 0.15), 0, 0.048, 0, Math.PI / 2);
+
+    } else if(kind === 'ball'){
+      P(G, new THREE.SphereGeometry(0.030, 18, 14), this._mat(c, 0.18), 0, 0.030, 0);
+      const dk = this._mat(0x2E3338, 0.05);
+      P(G, new THREE.TorusGeometry(0.030, 0.0035, 6, 24), dk, 0, 0.030, 0, Math.PI / 2);
+      P(G, new THREE.TorusGeometry(0.030, 0.0035, 6, 24), dk, 0, 0.030, 0, Math.PI / 2, 0, Math.PI / 2);
+
+    } else if(kind === 'battery'){
+      P(G, new THREE.CylinderGeometry(0.019, 0.019, 0.050, 16), this._mat(c, 0.3), 0, 0.025, 0);
+      P(G, new THREE.CylinderGeometry(0.019, 0.019, 0.010, 16), this._mat(0x2E3338, 0.1), 0, 0.045, 0);
+      P(G, new THREE.CylinderGeometry(0.007, 0.007, 0.006, 12), this._mat(0xC9CDD1, 0.2), 0, 0.053, 0);
+
+    } else {   // coin — 세워서 돌아가게. 원래 코드는 y=0.006 이라 절반이 상판에 묻혀 있었다
+      P(G, new THREE.CylinderGeometry(0.030, 0.030, 0.010, 20), this._mat(c), 0, 0.030, 0, Math.PI / 2);
+      P(G, new THREE.TorusGeometry(0.0265, 0.0035, 6, 22), this._mat(0xC4903A, 0.3), 0, 0.030, 0);
+    }
+    return G;
+  },
+
+  addItem(x, z, kind){
+    const k = this.ITEM_INFO[kind] ? kind : 'coin';
+    const g = this.buildItem(k);
+    g.position.set(x, 0, z);
+    this.group().add(g);
+    const it = { mesh: g, x, z, kind: k, taken: false };
     this.items.push(it);
     return it;
   },
