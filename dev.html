@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PIBO 개발툴</title>
 <link rel="stylesheet" href="css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <style>
   html,body{height:100%;margin:0;overflow:hidden}
-  #devTop{height:44px;display:flex;align-items:center;gap:6px;padding:0 12px;
-    background:var(--panel,#F7F8F9);border-bottom:1px solid var(--line,#DDE1E4);
-    font-family:var(--mono,ui-monospace,monospace);font-size:12px}
-  #devTop .title{font-weight:700;letter-spacing:.06em;margin-right:10px}
+  #devTop{height:46px;display:flex;align-items:center;gap:6px;padding:0 12px 0 16px;
+    background:var(--panel2,#FFFFFF);border-bottom:1px solid var(--line,#DDE1E4);flex-shrink:0;
+    font-family:var(--mono,'IBM Plex Mono','Nanum Gothic Coding',ui-monospace,monospace);font-size:12px}
+  #devTop .title{font-family:var(--sans,'Archivo','IBM Plex Sans KR',system-ui,sans-serif);font-size:13px;color:var(--ink,#1E2226);font-weight:700;letter-spacing:.14em;text-transform:uppercase;height:100%;display:flex;align-items:center;padding-right:16px;border-right:1px solid var(--line,#DDE1E4);margin-right:10px}
   #devTop .sp{flex:1}
   .db{border:1px solid var(--line,#DDE1E4);background:#fff;border-radius:2px;
     padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit}
@@ -30,7 +31,7 @@
   #devHSplit{height:6px;cursor:row-resize;background:var(--line,#DDE1E4);flex-shrink:0}
   #devHSplit:hover,#devHSplit.on{background:#8FA6B8}
   #devConsole{height:190px;flex-shrink:0;overflow-y:auto;background:#1B1E21;color:#C9D1D9;
-    font-family:var(--mono,ui-monospace,monospace);font-size:12px;line-height:1.75;padding:8px 12px}
+    font-family:var(--mono,'IBM Plex Mono','Nanum Gothic Coding',ui-monospace,monospace);font-size:12px;line-height:1.75;padding:8px 12px}
   @media (max-width:1200px){ #devRight{width:50vw;min-width:340px} }
   @media (max-width:900px){
     #devMain{flex-direction:column}
@@ -41,11 +42,11 @@
   #devConsole .warn{color:#E0B84C}
   #devConsole .err{color:#F08080}
   #devStatus{display:flex;gap:14px;padding:5px 10px;font-size:11px;
-    font-family:var(--mono,ui-monospace,monospace);color:#6B7278;
+    font-family:var(--mono,'IBM Plex Mono','Nanum Gothic Coding',ui-monospace,monospace);color:#6B7278;
     border-top:1px solid var(--line,#DDE1E4);border-bottom:1px solid var(--line,#DDE1E4)}
   /* 뷰어 위에 얹는 도구 */
   #vpTools{position:absolute;right:10px;top:10px;z-index:20;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
-  #vpTools select{font-family:var(--mono,ui-monospace,monospace);font-size:11px;padding:4px 6px;
+  #vpTools select{font-family:var(--mono,'IBM Plex Mono','Nanum Gothic Coding',ui-monospace,monospace);font-size:11px;padding:4px 6px;
     border:1px solid rgba(0,0,0,.18);border-radius:2px;background:rgba(255,255,255,.92);cursor:pointer}
   #vpTools .zb{width:30px;height:30px;font-size:15px;line-height:1;
     border:1px solid rgba(0,0,0,.18);border-radius:2px;background:rgba(255,255,255,.92);
@@ -129,6 +130,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <!-- 시뮬레이터 (체험툴과 완전히 같은 파일) -->
+<script src="js/i18n.js"></script>
 <script src="js/config.js"></script>
 <script src="js/dom.js"></script>
 <script src="js/orbit.js"></script>

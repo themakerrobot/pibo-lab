@@ -118,14 +118,14 @@ const Game = {
   // ── 아이템 10종 ──
   // 모두 Group 으로 만든다. 밑면이 y=0 에 오도록 안에서 높이를 잡는다.
   ITEM_INFO: {
-    coin:    { label: '동전',   colour: 0xE8B33C },
-    gem:     { label: '보석',   colour: 0x4FA8D8 },
-    heart:   { label: '하트',   colour: 0xD8556A },
-    box:     { label: '상자',   colour: 0x8C6B48 },
-    star:    { label: '별',     colour: 0xF2D14B },
-    key:     { label: '열쇠',   colour: 0xD9B44A },
-    trash:   { label: '휴지통', colour: 0xC0C6CC },
-    ball:    { label: '공',     colour: 0xF2F4F6 },
+    coin:    { label: PIBO_T('동전'),   colour: 0xE8B33C },
+    gem:     { label: PIBO_T('보석'),   colour: 0x4FA8D8 },
+    heart:   { label: PIBO_T('하트'),   colour: 0xD8556A },
+    box:     { label: PIBO_T('상자'),   colour: 0x8C6B48 },
+    star:    { label: PIBO_T('별'),     colour: 0xF2D14B },
+    key:     { label: PIBO_T('열쇠'),   colour: 0xD9B44A },
+    trash:   { label: PIBO_T('휴지통'), colour: 0xC0C6CC },
+    ball:    { label: PIBO_T('공'),     colour: 0xF2F4F6 },
   },
 
   _mat(c, glow){

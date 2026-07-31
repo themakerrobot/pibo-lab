@@ -33,7 +33,7 @@ function applyAtTime(t){
   applyPose(merged);
 }
 function addKeyframe(){
-  if(!Object.keys(sliderEls).length){alert('로봇을 먼저 로드하세요 (Load robot first)');return;}
+  if(!Object.keys(sliderEls).length){alert(PIBO_T('로봇을 먼저 로드하세요'));return;}
   const SNAP=0.05;
   const existing=keyframes.find(k=>Math.abs(k.time-currentTime)<SNAP);
   if(existing){
@@ -51,7 +51,7 @@ function deleteSelectedKf(){
   selectedKfId=null;updateKfCount();
 }
 function updateKfCount(){
-  document.getElementById('tlKfCount').textContent=`키프레임 ${keyframes.length}`;
+  document.getElementById('tlKfCount').textContent=`${PIBO_T('키프레임')} ${keyframes.length}`;
 }
 
 // TIMELINE CANVAS

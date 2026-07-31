@@ -73,38 +73,38 @@ let urdfFile=null,stlFiles=[];
 async function autoLoadFromData(){
   const ov=document.getElementById('loadOv'), title=document.getElementById('loadTitle');
   const ptext=document.getElementById('ptext'), pbar=document.getElementById('pbar'), spin=document.getElementById('spinner');
-  const fail=(msg)=>{ spin.style.display='none'; title.textContent='자동 로드 실패 (Auto-load failed)';
-    ptext.innerHTML=msg+'<br><span style="color:#B0B7BE">data/ 경로·네트워크 확인 후 새로고침하세요</span>';
+  const fail=(msg)=>{ spin.style.display='none'; title.textContent=PIBO_T('자동 로드 실패');
+    ptext.innerHTML=msg+'<br><span style="color:#B0B7BE">'+PIBO_T('data/ 경로·네트워크 확인 후 새로고침하세요')+'</span>';
     setTimeout(()=>{ ov.style.display='none'; document.getElementById('emptyMsg').style.display='flex'; }, 4000); };
   // 오버레이 켜기
   document.getElementById('emptyMsg').style.display='none';
   ov.style.display='flex'; spin.style.display='block';
-  title.textContent='data/ 에서 불러오는 중... (Loading from data/)';
-  ptext.textContent='URDF 가져오는 중...'; pbar.style.width='0%';
+  title.textContent=PIBO_T('data/ 에서 불러오는 중...');
+  ptext.textContent=PIBO_T('URDF 가져오는 중...'); pbar.style.width='0%';
 
   let urdfTxt=null, urdfName=null;
   for(const nm of URDF_NAMES){
     try{ const r=await fetch(DATA_DIR+nm); if(r.ok){ urdfTxt=await r.text(); urdfName=nm; break; } }catch(e){}
   }
-  if(!urdfTxt){ fail('data/ 에서 URDF('+URDF_NAMES.join(', ')+')를 찾지 못했습니다.'); return; }
+  if(!urdfTxt){ fail(PIBO_T('URDF를 찾지 못했습니다')+' ('+URDF_NAMES.join(', ')+')'); return; }
 
   let links;
-  try{ links=parseURDF(urdfTxt).links; }catch(e){ fail('URDF 파싱 오류: '+e.message); return; }
+  try{ links=parseURDF(urdfTxt).links; }catch(e){ fail(PIBO_T('URDF 파싱 오류')+': '+e.message); return; }
 
   const names=new Set();
   for(const l of Object.values(links)) for(const v of l.visuals){ const b=basename(v.fn); if(b) names.add(b); }
   const arr=[...names]; const files=[]; let i=0;
   for(const n of arr){
-    ptext.textContent=`STL 받는 중 ${++i}/${arr.length} — ${n}`;
+    ptext.textContent=`${PIBO_T('STL 받는 중')} ${++i}/${arr.length} — ${n}`;
     pbar.style.width=`${(i/arr.length)*100}%`;
     try{ const r=await fetch(DATA_DIR+n); if(r.ok) files.push(new File([await r.blob()], n)); }catch(e){}
     await sleep(0);
   }
-  if(!files.length){ fail('data/ 에서 STL을 받지 못했습니다.'); return; }
+  if(!files.length){ fail(PIBO_T('STL을 받지 못했습니다')); return; }
 
   urdfFile=new File([urdfTxt], urdfName);
   stlFiles=files;
-  ptext.textContent='모델 구성 중...';
+  ptext.textContent=PIBO_T('모델 구성 중...');
   await loadRobot();   // loadRobot이 오버레이를 닫음
 }
 
@@ -188,9 +188,9 @@ async function loadRobot(){
     const mv=Object.values(joints).filter(j=>j.type!=='fixed').length;
     document.getElementById('infoSec').style.display='block';
     document.getElementById('infoRows').innerHTML=
-      [['링크',Object.keys(links).length],['관절',Object.keys(joints).length],['가동',mv],['메시',allMeshes.length]]
+      [[PIBO_T('링크'),Object.keys(links).length],[PIBO_T('관절'),Object.keys(joints).length],[PIBO_T('가동'),mv],[PIBO_T('메시'),allMeshes.length]]
       .map(([k,v])=>`<div class="info-row"><span>${k}</span><span class="info-val">${v}</span></div>`).join('');
-    const b=document.getElementById('statusBadge');b.textContent='완료';b.className='badge ok';
+    const b=document.getElementById('statusBadge');b.textContent=PIBO_T('완료');b.className='badge ok';
   }catch(e){console.error(e);alert('오류 (Error): '+e.message);}
   document.getElementById('loadOv').style.display='none';
   if(_lb)_lb.disabled=false;
@@ -300,13 +300,13 @@ function setGlassColor(left, right){
 //  · 제외: 안경(눈 발광)과 LCD 는 각각 전용 UI 가 있다
 const FIXED_PARTS = ['head_eye', 'head_mouth', 'torso_lcd',
                      'torso_sensor', 'torso_usb', 'torso_button', 'torso_dc', 'shoes'];
-const ACCESSORY = { head_top: '머리 장식' };
+const ACCESSORY = { head_top: PIBO_T('머리 장식') };
 const PART_LABEL = {
-  base_link:'몸통', head_pan_link:'목', head_link:'머리',
-  shoulder_l_link:'왼쪽 어깨', arm_l_link:'왼팔',
-  shoulder_r_link:'오른쪽 어깨', arm_r_link:'오른팔',
-  leg_l_link:'왼쪽 다리', foot_l_link:'왼발',
-  leg_r_link:'오른쪽 다리', foot_r_link:'오른발',
+  base_link:PIBO_T('몸통'), head_pan_link:PIBO_T('목'), head_link:PIBO_T('머리'),
+  shoulder_l_link:PIBO_T('왼쪽 어깨'), arm_l_link:PIBO_T('왼팔'),
+  shoulder_r_link:PIBO_T('오른쪽 어깨'), arm_r_link:PIBO_T('오른팔'),
+  leg_l_link:PIBO_T('왼쪽 다리'), foot_l_link:PIBO_T('왼발'),
+  leg_r_link:PIBO_T('오른쪽 다리'), foot_r_link:PIBO_T('오른발'),
 };
 let partOrigColors = {};   // 되돌리기용 원래 색
 

@@ -8,7 +8,7 @@ const gT = t => ({ shadow: { type: 'text', fields: { TEXT: t } } });
 const GAME_TOOLBOX = {
   kind: 'categoryToolbox',
   contents: [
-    { kind: 'category', name: '시작', colour: game_colour.event,
+    { kind: 'category', name: PIBO_T('시작'), colour: game_colour.event,
       cssConfig: { icon: 'customIcon fa-solid fa-circle-play' },
       contents: [
         { kind: 'block', type: 'game_start' },
@@ -19,7 +19,7 @@ const GAME_TOOLBOX = {
 
     { kind: 'sep' },
 
-    { kind: 'category', name: '움직임', colour: game_colour.move,
+    { kind: 'category', name: PIBO_T('움직임'), colour: game_colour.move,
       cssConfig: { icon: 'customIcon fa-solid fa-person-walking' },
       contents: [
         { kind: 'block', type: 'game_move', inputs: { N: gN(1) } },
@@ -28,7 +28,7 @@ const GAME_TOOLBOX = {
         { kind: 'block', type: 'game_motion' },
       ] },
 
-    { kind: 'category', name: '무대', colour: game_colour.world,
+    { kind: 'category', name: PIBO_T('무대'), colour: game_colour.world,
       cssConfig: { icon: 'customIcon fa-solid fa-toolbox' },
       contents: [
         { kind: 'block', type: 'game_add_item_random', inputs: { N: gN(5) } },
@@ -39,17 +39,17 @@ const GAME_TOOLBOX = {
         { kind: 'block', type: 'game_clear_world' },
       ] },
 
-    { kind: 'category', name: '점수', colour: game_colour.score,
+    { kind: 'category', name: PIBO_T('점수'), colour: game_colour.score,
       cssConfig: { icon: 'customIcon fa-solid fa-list' },
       contents: [
         { kind: 'block', type: 'game_add_score', inputs: { N: gN(1) } },
         { kind: 'block', type: 'game_add_life', inputs: { N: gN(-1) } },
-        { kind: 'block', type: 'game_say', inputs: { MSG: gT('잘했어요!') } },
-        { kind: 'block', type: 'game_speak', inputs: { MSG: gT('안녕! 나는 파이보야') } },
+        { kind: 'block', type: 'game_say', inputs: { MSG: gT(PIBO_T('잘했어요!')) } },
+        { kind: 'block', type: 'game_speak', inputs: { MSG: gT(PIBO_T('안녕! 나는 파이보야')) } },
         { kind: 'block', type: 'game_over' },
       ] },
 
-    { kind: 'category', name: '꾸미기', colour: game_colour.score,
+    { kind: 'category', name: PIBO_T('꾸미기'), colour: game_colour.score,
       cssConfig: { icon: 'customIcon fa-solid fa-wand-magic-sparkles' },
       contents: [
         { kind: 'block', type: 'game_eye',
@@ -61,7 +61,7 @@ const GAME_TOOLBOX = {
         { kind: 'block', type: 'colour_random' },
       ] },
 
-    { kind: 'category', name: '감지', colour: game_colour.sense,
+    { kind: 'category', name: PIBO_T('감지'), colour: game_colour.sense,
       cssConfig: { icon: 'customIcon fa-solid fa-magnifying-glass' },
       contents: [
         { kind: 'block', type: 'game_get_score' },
@@ -75,12 +75,12 @@ const GAME_TOOLBOX = {
 
     { kind: 'sep' },
 
-    { kind: 'category', name: '논리', colour: '#B098CB',
+    { kind: 'category', name: PIBO_T('논리'), colour: '#B098CB',
       cssConfig: { icon: 'customIcon fa fa-bars-staggered' },
       contents: ['controls_if', 'logic_compare', 'logic_operation', 'logic_negate', 'logic_boolean']
         .map(t => ({ kind: 'block', type: t })) },
 
-    { kind: 'category', name: '반복', colour: '#85B687',
+    { kind: 'category', name: PIBO_T('반복'), colour: '#85B687',
       cssConfig: { icon: 'customIcon fa fa-arrows-spin' },
       contents: [
         { kind: 'block', type: 'controls_repeat_ext', inputs: { TIMES: gN(10) } },
@@ -89,7 +89,7 @@ const GAME_TOOLBOX = {
         { kind: 'block', type: 'controls_flow_statements' },
       ] },
 
-    { kind: 'category', name: '수학', colour: '#2196F3',
+    { kind: 'category', name: PIBO_T('수학'), colour: '#2196F3',
       cssConfig: { icon: 'customIcon fa fa-square-root-variable' },
       contents: [
         { kind: 'block', type: 'math_number', fields: { NUM: '0' } },
@@ -99,7 +99,7 @@ const GAME_TOOLBOX = {
         { kind: 'block', type: 'math_modulo', inputs: { DIVIDEND: gN(10), DIVISOR: gN(3) } },
       ] },
 
-    { kind: 'category', name: '문자', colour: '#FFAA08',
+    { kind: 'category', name: PIBO_T('문자'), colour: '#FFAA08',
       cssConfig: { icon: 'customIcon fa fa-t' },
       contents: [
         { kind: 'block', type: 'text' },
@@ -108,9 +108,9 @@ const GAME_TOOLBOX = {
 
     { kind: 'sep' },
 
-    { kind: 'category', name: '변수', colour: '#EF9A9A', custom: 'VARIABLE',
+    { kind: 'category', name: PIBO_T('변수'), colour: '#EF9A9A', custom: 'VARIABLE',
       cssConfig: { icon: 'customIcon fa fa-v' }, contents: [] },
-    { kind: 'category', name: '함수', colour: '#C7BCB8', custom: 'PROCEDURE',
+    { kind: 'category', name: PIBO_T('함수'), colour: '#C7BCB8', custom: 'PROCEDURE',
       cssConfig: { icon: 'customIcon fa fa-florin-sign' }, contents: [] },
   ],
 };

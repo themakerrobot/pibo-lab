@@ -666,15 +666,15 @@ function gradTex(top, bottom){
   return t;
 }
 const THEMES = {
-  desk:    { label:'책상',       build: buildDesk },
-  dining:  { label:'식탁',       build: buildDining },
-  bench:   { label:'작업대',     build: buildWorkbench },
-  road:    { label:'주행 매트',  build: buildRoadMat },
-  sumo:    { label:'스모 링',    build: buildSumo },
-  soccer:  { label:'축구장',     build: buildSoccer },
-  space:   { label:'우주 기지',  build: buildSpace },
-  kitchen: { label:'주방 조리대', build: buildKitchen },
-  plain:   { label:'심플',       build: buildPlain },
+  desk:    { label:PIBO_T('책상'),       build: buildDesk },
+  dining:  { label:PIBO_T('식탁'),       build: buildDining },
+  bench:   { label:PIBO_T('작업대'),     build: buildWorkbench },
+  road:    { label:PIBO_T('주행 매트'),  build: buildRoadMat },
+  sumo:    { label:PIBO_T('스모 링'),    build: buildSumo },
+  soccer:  { label:PIBO_T('축구장'),     build: buildSoccer },
+  space:   { label:PIBO_T('우주 기지'),  build: buildSpace },
+  kitchen: { label:PIBO_T('주방 조리대'), build: buildKitchen },
+  plain:   { label:PIBO_T('심플'),       build: buildPlain },
 };
 let themeGroup = null;
 let gridOn = true;
@@ -783,7 +783,7 @@ function drawMiniMap(){
   g.beginPath(); g.arc(px(p.x), py(p.z), 3.6, 0, 7); g.fill();
   if(!inside){
     g.fillStyle = '#B33'; g.font = 'bold 9px monospace';
-    g.fillText('상판 이탈', 6, 11);
+    g.fillText(PIBO_T('상판 이탈'), 6, 11);
   }
 }
 function pushTrail(){

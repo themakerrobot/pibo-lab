@@ -29,9 +29,9 @@
     `simSetMotors(${val(b, 'val_list', "''")}, ${val(b, 'time', '1000')});\n`;
   // 속도·가속도는 실물 서보 설정값. 시뮬에는 대응이 없어 기록만 남긴다.
   G['motion_set_speed'] = b =>
-    `simNote('set_speed(' + ${b.getFieldValue('no')} + ', ' + ${val(b, 'val', '0')} + ') — 시뮬 미반영');\n`;
+    `simNote('set_speed(' + ${b.getFieldValue('no')} + ', ' + ${val(b, 'val', '0')} + ') — ${PIBO_T('시뮬 미반영')}');\n`;
   G['motion_set_acceleration'] = b =>
-    `simNote('set_acceleration(' + ${b.getFieldValue('no')} + ', ' + ${val(b, 'val', '0')} + ') — 시뮬 미반영');\n`;
+    `simNote('set_acceleration(' + ${b.getFieldValue('no')} + ', ' + ${val(b, 'val', '0')} + ') — ${PIBO_T('시뮬 미반영')}');\n`;
   G['motion_get_motion'] = () => ['simGetMotionList()', ORD_ATOMIC];
   G['motion_get_mymotion'] = () => ['simGetMotionList()', ORD_ATOMIC];
 
@@ -95,8 +95,8 @@
   Blockly.Blocks && Object.keys(Blockly.Blocks).forEach(t => {
     if (G[t]) return;
     G[t] = function (block) {
-      const unsupported = `// ${t}: 시뮬 미지원\n`;
-      return block.outputConnection ? ['null', ORD_ATOMIC] : `simNote('${t} — 시뮬 미지원, 건너뜀');\n`;
+      const unsupported = `// ${t}: ${PIBO_T('시뮬 미지원')}\n`;
+      return block.outputConnection ? ['null', ORD_ATOMIC] : `simNote('${t} — ${PIBO_T('시뮬 미지원, 건너뜀')}');\n`;
     };
   });
 })();

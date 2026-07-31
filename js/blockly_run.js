@@ -36,7 +36,7 @@ function voicePitch(v) {
 }
 function speakAsync(text, volume, voice) {
   return new Promise(res => {
-    if (!window.speechSynthesis) { devLog('(브라우저가 TTS 를 지원하지 않음)', 'warn'); return res(); }
+    if (!window.speechSynthesis) { devLog(PIBO_T('(브라우저가 TTS 를 지원하지 않음)'), 'warn'); return res(); }
     const u = new SpeechSynthesisUtterance(String(text));
     u.lang = 'ko-KR';
     u.pitch = Math.max(0.1, Math.min(2, voicePitch(voice)));
@@ -102,7 +102,7 @@ function buildInterpreterApi(interp, scope) {
   setAsync('simPlayMotion', (name, cycle, cb) => {
     const n = String(native(name));
     devLog('▶ ' + n);
-    Pibo.playMotion(n, Number(cycle) || 1).then(() => cb()).catch(err => { devLog('모션 오류: ' + err, 'err'); cb(); });
+    Pibo.playMotion(n, Number(cycle) || 1).then(() => cb()).catch(err => { devLog(PIBO_T('모션 오류') + ': ' + err, 'err'); cb(); });
   });
 }
 
@@ -119,24 +119,24 @@ function devRun() {
   try {
     code = Blockly.JavaScript.workspaceToCode(devWorkspace);
   } catch (e) {
-    devLog('코드 생성 실패: ' + e.message, 'err'); return;
+    devLog(PIBO_T('코드 생성 실패') + ': ' + e.message, 'err'); return;
   }
   if (!code.trim()) {
     const has = devWorkspace.getAllBlocks(false).length > 0;
-    devLog(has ? "'시작' 블록에 연결된 블록이 없습니다. 시작 아래에 붙여주세요."
-               : '블록이 없습니다.', 'warn');
+    devLog(has ? PIBO_T("'시작' 블록에 연결된 블록이 없습니다. 시작 아래에 붙여주세요.")
+               : PIBO_T('블록이 없습니다.'), 'warn');
     return;
   }
 
   try {
     simInterp = new Interpreter(code, buildInterpreterApi);
   } catch (e) {
-    devLog('실행 준비 실패: ' + e.message, 'err'); return;
+    devLog(PIBO_T('실행 준비 실패') + ': ' + e.message, 'err'); return;
   }
 
   simRunning = true;
   setRunUI(true);
-  devLog('실행 시작');
+  devLog(PIBO_T('실행 시작'));
 
   // 한 프레임에 여러 스텝을 돌리되, 대기 상태면 즉시 양보한다
   const STEPS_PER_FRAME = 800;
@@ -150,7 +150,7 @@ function devRun() {
         if (simInterp.paused_) break;   // 비동기 대기 중
       }
     } catch (e) {
-      devLog('실행 오류: ' + e.message, 'err');
+      devLog(PIBO_T('실행 오류') + ': ' + e.message, 'err');
       devStop(); return;
     }
     more ? requestAnimationFrame(loop) : devFinish();
@@ -161,7 +161,7 @@ function devFinish() {
   simRunning = false;
   setRunUI(false);
   if (devWorkspace) devWorkspace.highlightBlock(null);
-  devLog('실행 끝');
+  devLog(PIBO_T('실행 끝'));
 }
 
 function devStop() {
@@ -171,7 +171,7 @@ function devStop() {
   setRunUI(false);
   if (window.speechSynthesis) speechSynthesis.cancel();
   if (devWorkspace) devWorkspace.highlightBlock(null);
-  devLog('정지', 'warn');
+  devLog(PIBO_T('정지'), 'warn');
 }
 
 function setRunUI(on) {

@@ -61,7 +61,7 @@ window.PHYS = {
   },
 
   build(){
-    if(!robotRoot){alert('로봇을 먼저 로드하세요');return false;}
+    if(!robotRoot){alert(PIBO_T('로봇을 먼저 로드하세요'));return false;}
     const R=window.RAPIER;
     this.world=new R.World({x:0,y:-9.81,z:0});
     this.world.timestep=PHYS_DT;
@@ -137,7 +137,7 @@ window.PHYS = {
   },
 
   enable(){
-    if(!this.ready){alert('물리 엔진 로딩 중입니다');return;}
+    if(!this.ready){alert(PIBO_T('물리 엔진 로딩 중입니다'));return;}
     if(this.on) return;
     if(!this.build()){ if(this.world){this.world.free();this.world=null;} return; }
     this.on=true;
@@ -213,7 +213,7 @@ window.PHYS = {
     if(fell!==this.fallen){
       this.fallen=fell;
       uiStyle('fallBanner','display',fell?'block':'none');
-      uiText('physState',fell?'넘어짐':'ON');
+      uiText('physState',fell?PIBO_T('넘어짐'):'ON');
     }
     uiText('physTilt',this.tilt.toFixed(1)+'°');
     const dx=t.x-this.startXZ.x, dz=t.z-this.startXZ.z;
@@ -238,6 +238,6 @@ uiOn('physBtn','click',()=>{
 });
 window.addEventListener('rapier-ready',()=>PHYS.init());
 window.addEventListener('rapier-fail',()=>{
-  uiText('physEngine','실패');
-  uiSet('physBtn','title','Rapier 로드 실패 — 콘솔(F12) 확인');
+  uiText('physEngine',PIBO_T('실패'));
+  uiSet('physBtn','title',PIBO_T('Rapier 로드 실패 — 콘솔(F12) 확인'));
 });
