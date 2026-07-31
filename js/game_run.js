@@ -17,7 +17,7 @@ let gameT0 = 0;                       // 게임 시작 시각 (performance.now)
 const gElapsed = () => gameT0 ? (performance.now() - gameT0) / 1000 : 0;
 const gFmtTime = sec => {
   const m = Math.floor(sec / 60), s2 = sec - m * 60;
-  return m > 0 ? m + '분 ' + s2.toFixed(1) + '초' : s2.toFixed(1) + '초';
+  return m > 0 ? m + T('분') + s2.toFixed(1) + T('초') : s2.toFixed(1) + T('초');
 };
 
 // ── HUD 시간 표시 (game.html 수정 없이 여기서 붙인다) ──
@@ -25,7 +25,7 @@ const gFmtTime = sec => {
   const hud = document.getElementById('gHud');
   if (!hud || document.getElementById('gTime')) return;
   const sp = document.createElement('span');
-  sp.innerHTML = '<span class="lb">시간</span><b id="gTime">0:00</b>';
+  sp.innerHTML = '<span class="lb">' + T('시간') + '</span><b id="gTime">0:00</b>';
   hud.appendChild(sp);
   setInterval(() => {
     const el = document.getElementById('gTime');
@@ -40,11 +40,12 @@ const gFmtTime = sec => {
 if (window.speechSynthesis) speechSynthesis.getVoices();
 function gSpeakAsync(text) {
   return new Promise(res => {
-    if (!window.speechSynthesis) { gLog('(브라우저가 TTS 를 지원하지 않음)', 'warn'); return res(); }
+    if (!window.speechSynthesis) { gLog(T('(브라우저가 TTS 를 지원하지 않음)'), 'warn'); return res(); }
     const u = new SpeechSynthesisUtterance(String(text));
-    u.lang = 'ko-KR';
-    const ko = speechSynthesis.getVoices().find(v => /ko/i.test(v.lang));
-    if (ko) u.voice = ko;
+    u.lang = (PIBO_LANG === 'en') ? 'en-US' : 'ko-KR';
+    const want = (PIBO_LANG === 'en') ? /^en/i : /^ko/i;
+    const voice = speechSynthesis.getVoices().find(v => want.test(v.lang));
+    if (voice) u.voice = voice;
     u.onend = u.onerror = () => res();
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
@@ -185,7 +186,7 @@ function buildGameApi(interp, scope) {
     let i = 0;
     const next = () => {
       if (i >= steps || !gameRunning) return cb();
-      if (gWallAhead(dir)) { Game.say('벽에 막혔어요'); return cb(); }
+      if (gWallAhead(dir)) { Game.say(T('벽에 막혔어요')); return cb(); }
       i++;
       gStepOnce(dir).then(next);
     };
@@ -223,7 +224,7 @@ function buildGameApi(interp, scope) {
   set('gScore', n => Game.addScore(nat(n)));
   set('gLife', n => {
     Game.addLife(nat(n));
-    if (Game.lives <= 0) { Game.say('게임 오버'); gLog('게임 오버', 'warn'); gameStop(); }
+    if (Game.lives <= 0) { Game.say(T('게임 오버')); gLog(T('게임 오버'), 'warn'); gameStop(); }
   });
   set('gSay', m => { Game.say(String(nat(m))); gLog(String(nat(m))); });
   set('gEye', (side, col) => {
@@ -255,8 +256,8 @@ function buildGameApi(interp, scope) {
   set('gOver', r => {
     const win = String(nat(r)) === 'win';
     const t = gFmtTime(gElapsed());
-    Game.say(win ? '성공! (' + t + ')' : '실패…');
-    gLog((win ? '게임 성공' : '게임 실패') + ' — 걸린 시간 ' + t, win ? '' : 'warn');
+    Game.say(win ? T('성공!') + ' (' + t + ')' : T('실패…'));
+    gLog((win ? T('게임 성공') : T('게임 실패')) + ' — ' + T('걸린 시간') + ' ' + t, win ? '' : 'warn');
     gameStop();
   });
 
@@ -290,10 +291,10 @@ function gameRun() {
 
   let code;
   try { code = Blockly.JavaScript.workspaceToCode(gameWorkspace); }
-  catch (e) { gLog('코드 생성 실패: ' + e.message, 'err'); return; }
+  catch (e) { gLog(T('코드 생성 실패') + ': ' + e.message, 'err'); return; }
   if (!code.trim()) {
     const has = gameWorkspace.getAllBlocks(false).length > 0;
-    gLog(has ? "'게임 시작하면' 블록에 연결해 주세요." : '블록이 없습니다.', 'warn');
+    gLog(has ? T("'게임 시작하면' 블록에 연결해 주세요.") : T('블록이 없습니다.'), 'warn');
     return;
   }
 
@@ -307,14 +308,14 @@ function gameRun() {
   code = PRE + code + POST;
 
   try { gameInterp = new Interpreter(code, buildGameApi); }
-  catch (e) { gLog('실행 준비 실패: ' + e.message, 'err'); return; }
+  catch (e) { gLog(T('실행 준비 실패') + ': ' + e.message, 'err'); return; }
 
   gameRunning = true;
   gameT0 = performance.now();
   { const el = document.getElementById('gTime'); if (el) el.textContent = '0:00'; }
   Game.start();
   setGameUI(true);
-  gLog('게임 시작 — 방향키로 조종하세요');
+  gLog(T('게임 시작 — 방향키로 조종하세요'));
 
   (function loop() {
     if (!gameRunning || !gameInterp) return;
@@ -326,8 +327,8 @@ function gameRun() {
         if (!gameRunning || !gameInterp) return;
         if (!more || gameInterp.paused_) break;
       }
-    } catch (e) { gLog('실행 오류: ' + e.message, 'err'); gameStop(); return; }
-    if (!more) { gLog('실행 끝'); gameStop(); return; }
+    } catch (e) { gLog(T('실행 오류') + ': ' + e.message, 'err'); gameStop(); return; }
+    if (!more) { gLog(T('실행 끝')); gameStop(); return; }
     requestAnimationFrame(loop);
   })();
 }
@@ -340,7 +341,7 @@ function gameStop() {
   Game.stop();
   setGameUI(false);
   if (gameWorkspace) gameWorkspace.highlightBlock(null);
-  gLog('정지', 'warn');
+  gLog(T('정지'), 'warn');
 }
 
 function setGameUI(on) {

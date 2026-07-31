@@ -666,15 +666,15 @@ function gradTex(top, bottom){
   return t;
 }
 const THEMES = {
-  desk:    { label:'책상',       build: buildDesk },
-  dining:  { label:'식탁',       build: buildDining },
-  bench:   { label:'작업대',     build: buildWorkbench },
-  road:    { label:'주행 매트',  build: buildRoadMat },
-  sumo:    { label:'스모 링',    build: buildSumo },
-  soccer:  { label:'축구장',     build: buildSoccer },
-  space:   { label:'우주 기지',  build: buildSpace },
-  kitchen: { label:'주방 조리대', build: buildKitchen },
-  plain:   { label:'심플',       build: buildPlain },
+  desk:    { label:T('책상'),       build: buildDesk },
+  dining:  { label:T('식탁'),       build: buildDining },
+  bench:   { label:T('작업대'),     build: buildWorkbench },
+  road:    { label:T('주행 매트'),  build: buildRoadMat },
+  sumo:    { label:T('스모 링'),    build: buildSumo },
+  soccer:  { label:T('축구장'),     build: buildSoccer },
+  space:   { label:T('우주 기지'),  build: buildSpace },
+  kitchen: { label:T('주방 조리대'), build: buildKitchen },
+  plain:   { label:T('심플'),       build: buildPlain },
 };
 let themeGroup = null;
 let gridOn = true;
