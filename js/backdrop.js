@@ -783,7 +783,7 @@ function drawMiniMap(){
   g.beginPath(); g.arc(px(p.x), py(p.z), 3.6, 0, 7); g.fill();
   if(!inside){
     g.fillStyle = '#B33'; g.font = 'bold 9px monospace';
-    g.fillText('상판 이탈', 6, 11);
+    g.fillText(T('상판 이탈'), 6, 11);
   }
 }
 function pushTrail(){

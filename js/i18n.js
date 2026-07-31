@@ -245,6 +245,46 @@ const PIBO_I18N = {
   "'게임 시작하면' 블록에 연결해 주세요.": "Connect your blocks to the 'when the game starts' block.",
   '잘했어요!': 'Well done!',
   '안녕! 나는 파이보야': 'Hi! I am PIBO',
+
+  // ── 모델 로딩 / 상태 (체험툴) ──
+  '자동 로드 실패': 'Auto-load failed',
+  'data/ 경로·네트워크 확인 후 새로고침하세요': 'Check the data/ path and your network, then refresh',
+  'data/ 에서 불러오는 중...': 'Loading from data/...',
+  'URDF 가져오는 중...': 'Fetching the URDF...',
+  'URDF를 찾지 못했습니다': 'Could not find the URDF in data/',
+  'URDF 파싱 오류': 'URDF parse error',
+  'STL 받는 중': 'Fetching STL',
+  'STL을 받지 못했습니다': 'Could not fetch the STL files from data/',
+  '모델 구성 중...': 'Building the model...',
+  '링크': 'Links',
+  '가동': 'Movable',
+  '메시': 'Meshes',
+  '완료': 'Done',
+
+  // ── 타임라인 / 모션 ──
+  '키프레임을 먼저 추가하세요': 'Add a keyframe first',
+  '모션 이름': 'Motion name',
+  '모션을 불러오지 못했습니다': 'Could not load the motion',
+  '모션 파일을 읽지 못했습니다': 'Could not read the motion file',
+  '로봇을 먼저 로드하세요': 'Load the robot first',
+  '키프레임': 'Keyframes',
+  '모션 오류': 'Motion error',
+
+  // ── 물리 ──
+  '물리 엔진 로딩 중입니다': 'The physics engine is still loading',
+  '넘어짐': 'Fallen',
+  '상판 이탈': 'Off the table',
+  '실패': 'Failed',
+  'Rapier 로드 실패 — 콘솔(F12) 확인': 'Rapier failed to load — check the console (F12)',
+
+  // ── 개발툴 실행 ──
+  '실행 시작': 'Running',
+  "'시작' 블록에 연결된 블록이 없습니다. 시작 아래에 붙여주세요.":
+    "Nothing is connected to the 'start' block. Attach your blocks under it.",
+  '시뮬 미반영': 'not simulated',
+  '시뮬 미지원': 'not supported in the simulator',
+  '시뮬 미지원, 건너뜀': 'not supported in the simulator, skipped',
+
   '걸린 시간': 'Time taken',
   '시간': 'Time',
   '코드 생성 실패': 'Code generation failed',
