@@ -8,7 +8,7 @@
 //  · 언어 설정은 실물 IDE(blockly/ko2en.js)와 같은 localStorage 키 'language' 를
 //    쓴다. 그래서 이 토글 하나로 Blockly 기본 블록 언어까지 같이 바뀐다.
 //
-// 반드시 다른 js 보다 먼저 로드할 것 (블록 정의가 T() 를 쓴다).
+// 반드시 다른 js 보다 먼저 로드할 것 (블록 정의가 PIBO_T() 를 쓴다).
 
 const PIBO_LANG = (function () {
   try {
@@ -308,7 +308,7 @@ const PIBO_I18N = {
 })();
 
 // 한국어 원문 → 현재 언어. 사전에 없으면 원문 그대로.
-function T(ko) {
+function PIBO_T(ko) {
   if (PIBO_LANG === 'ko') return ko;
   const v = PIBO_I18N[ko];
   return (v === undefined) ? ko : v;

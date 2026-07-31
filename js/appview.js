@@ -93,7 +93,7 @@ document.getElementById('tlToStart').addEventListener('click',()=>{
   currentTime=0;isPlaying=false;playLastT=null;document.getElementById('tlPlayPause').textContent='▶';applyAtTime(0);
 });
 document.getElementById('tlPlayPause').addEventListener('click',function(){
-  if(!keyframes.length){alert(T('키프레임을 먼저 추가하세요'));return;}
+  if(!keyframes.length){alert(PIBO_T('키프레임을 먼저 추가하세요'));return;}
   isPlaying=!isPlaying;this.textContent=isPlaying?'⏸':'▶';
   if(isPlaying){playLastT=null;if(currentTime>=duration)currentTime=0;}
 });
@@ -110,7 +110,7 @@ document.getElementById('tlLoopBtn').addEventListener('click',function(){loopMod
 
 // ★ 모션 저장 → 실물 PIBO 포맷 {name:{init_def,init,pos:[{d,seq}]}} (도 단위)
 document.getElementById('tlSaveMotion').addEventListener('click',()=>{
-  if(!keyframes.length){alert(T('키프레임을 먼저 추가하세요'));return;}
+  if(!keyframes.length){alert(PIBO_T('키프레임을 먼저 추가하세요'));return;}
   const R2D=180/Math.PI;
   const sorted=[...keyframes].sort((a,b)=>a.time-b.time);
   const toD=kf=>PIBO_MAP.map(m=>Math.round(m.s*(kf.joints[m.j]??0))); // 슬라이더(度)=모터값
@@ -118,7 +118,7 @@ document.getElementById('tlSaveMotion').addEventListener('click',()=>{
   const init = sorted.length ? toD(sorted[0]) : PIBO_DEFAULT_INIT.slice();
   const posFrames = hasZero ? sorted.slice(1) : sorted;  // 0초 키프레임은 init으로만, pos에서 제외
   const pos = posFrames.map(kf=>({ d:toD(kf), seq:Math.round(kf.time*1000) }));
-  const name=(prompt(T('모션 이름'),'motion')||'motion').trim()||'motion';
+  const name=(prompt(PIBO_T('모션 이름'),'motion')||'motion').trim()||'motion';
   const data={[name]:{init_def:1, init, pos}};
   const a=document.createElement('a');a.download=name+'.json';
   a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));a.click();
@@ -168,14 +168,14 @@ function loadMotionData(raw){
       const r=await fetch('motions/'+n+'.json');
       if(!r.ok) throw new Error(r.status);
       loadMotionData(await r.json());
-    }catch(err){ alert(T('모션을 불러오지 못했습니다')+': '+n+' ('+err.message+')'); }
+    }catch(err){ alert(PIBO_T('모션을 불러오지 못했습니다')+': '+n+' ('+err.message+')'); }
   });
 })();
 
 document.getElementById('motionFileIn').addEventListener('change',async e=>{
   const f=e.target.files[0];if(!f)return;
   try{ loadMotionData(JSON.parse(await readText(f))); }
-  catch(err){ alert(T('모션 파일을 읽지 못했습니다')+': '+err.message); }
+  catch(err){ alert(PIBO_T('모션 파일을 읽지 못했습니다')+': '+err.message); }
   e.target.value='';
 });
 
