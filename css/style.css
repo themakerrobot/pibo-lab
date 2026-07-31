@@ -107,8 +107,8 @@ input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-s
 .navlink{
   display:inline-flex;align-items:center;gap:6px;
   border:1px solid var(--line);background:#fff;color:var(--ink);
-  border-radius:2px;padding:5px 12px;margin-right:2px;
-  font-family:var(--mono);font-size:11px;letter-spacing:.04em;
+  border-radius:2px;padding:5px 11px;margin-right:2px;
+  font-family:var(--mono);font-size:12px;letter-spacing:.04em;
   text-decoration:none;white-space:nowrap;
 }
 .navlink:hover{background:#EEF1F3;border-color:#B9C0C6}

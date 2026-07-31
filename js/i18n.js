@@ -366,7 +366,7 @@ function mountLangToggle() {
     b.style.cssText =
       'border:1px solid ' + (on ? '#2E3338' : '#DDE1E4') + ';' +
       'background:' + (on ? '#2E3338' : '#fff') + ';color:' + (on ? '#fff' : '#2E3338') + ';' +
-      'border-radius:2px;padding:4px 9px;font-size:11px;letter-spacing:.04em;' +
+      'border-radius:2px;padding:5px 11px;font-size:12px;letter-spacing:.04em;' +
       'font-family:var(--mono,ui-monospace,monospace);cursor:' + (on ? 'default' : 'pointer');
     if (!on) b.addEventListener('click', function () { setLanguage(p[0]); });
     wrap.appendChild(b);
