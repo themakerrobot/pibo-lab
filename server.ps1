@@ -1,5 +1,5 @@
-# Pibo Lab 정적 서버 (Python 없는 PC용 — Windows 기본 PowerShell만 사용)
-param([int]$Port = 8000)
+# Pibo Lab static server (for PCs without Python - uses built-in Windows PowerShell)
+param([int]$Port = 50030)
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $mime = @{
@@ -16,10 +16,10 @@ $mime = @{
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$Port/")
 try { $listener.Start() } catch {
-  Write-Host "포트 $Port 를 열 수 없습니다. 이미 실행 중이거나 다른 프로그램이 사용 중입니다."
+  Write-Host "Cannot open port $Port. Server may already be running, or the port is in use."
   exit 1
 }
-Write-Host "파이보 랩 서버 시작 — http://localhost:$Port  (이 창을 닫으면 종료됩니다)"
+Write-Host "Pibo Lab server - http://localhost:$Port  (close this window to stop)"
 
 while ($listener.IsListening) {
   $ctx = $listener.GetContext()
