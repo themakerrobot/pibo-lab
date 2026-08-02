@@ -21,6 +21,7 @@ const PIBO_LANG = (function () {
 
 const PIBO_I18N = {
   // ── 페이지 / 공통 UI ──
+  '파이보 랩': 'Pibo Lab',
   'PIBO 체험툴': 'PIBO Playground',
   'PIBO 개발툴': 'PIBO Block IDE',
   'PIBO 게임 만들기': 'PIBO Game Maker',
@@ -357,24 +358,24 @@ function mountLangToggle() {
 
   const wrap = document.createElement('span');
   wrap.id = 'langToggle';
-  wrap.style.cssText = 'display:inline-flex;gap:3px;margin-left:8px;align-items:center';
+  wrap.style.cssText = 'display:inline-flex;gap:4px;align-items:center';
 
   [['ko', '한국어'], ['en', 'EN']].forEach(function (p) {
     const on = PIBO_LANG === p[0];
     const b = document.createElement('button');
     b.textContent = p[1];
     b.style.cssText =
-      'border:1px solid ' + (on ? '#2E3338' : '#DDE1E4') + ';' +
-      'background:' + (on ? '#2E3338' : '#fff') + ';color:' + (on ? '#fff' : '#2E3338') + ';' +
-      'border-radius:2px;padding:5px 11px;font-size:12px;letter-spacing:.04em;' +
-      'font-family:var(--mono,\'IBM Plex Mono\',ui-monospace,monospace);cursor:' + (on ? 'default' : 'pointer');
+      'border:1px solid ' + (on ? 'var(--acc,#00BEDC)' : 'var(--line,#DDE6EA)') + ';' +
+      'background:' + (on ? 'var(--acc,#00BEDC)' : 'var(--panel,#fff)') + ';' +
+      'color:' + (on ? 'var(--acc-deep,#04303A)' : 'var(--ink2,#5C6E79)') + ';' +
+      'border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;' +
+      'font-family:inherit;cursor:' + (on ? 'default' : 'pointer');
     if (!on) b.addEventListener('click', function () { setLanguage(p[0]); });
     wrap.appendChild(b);
   });
 
-  // 페이지 이동 버튼 바로 뒤에 붙인다
-  const spacer = bar.querySelector('.sp, [style*="flex:1"]');
-  spacer ? bar.insertBefore(wrap, spacer) : bar.appendChild(wrap);
+  // 3페이지 공통: 상단바 맨 오른쪽 끝에 고정
+  bar.appendChild(wrap);
 }
 
 if (document.readyState === 'loading') {
