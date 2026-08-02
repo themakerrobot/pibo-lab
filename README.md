@@ -1,8 +1,8 @@
-# pibo-sim
+# pibo-lab
 
 PIBO 휴머노이드 로봇용 웹 URDF 시뮬레이터. 브라우저에서 URDF와 STL을 불러와 관절을 조작하고, 타임라인으로 모션을 제작해 실물 PIBO 모션 툴 포맷(JSON)으로 내보내기.
 
-데모: https://themakerrobot.github.io/pibo-sim/
+데모: https://themakerrobot.github.io/pibo-lab/
 
 ## 기능
 
