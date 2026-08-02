@@ -386,7 +386,7 @@ if(AUTOLOAD) window.addEventListener('load',autoLoadFromData);
 // ── 조인트 슬라이더 (sliderEls 가 관절 목표각 저장소이므로 뷰어 소속) ──
 function buildSliders(joints){
   const movable=Object.values(joints).filter(j=>j.type!=='fixed');
-  document.getElementById('jcount').textContent=movable.length+'개';
+  document.getElementById('jcount').textContent=(typeof PIBO_LANG!=='undefined'&&PIBO_LANG==='en')?String(movable.length):movable.length+'개';
   const groups={'머리':[],'오른팔':[],'왼팔':[],'오른다리':[],'왼다리':[],'기타':[]};
   for(const j of movable){const lab=(MOTOR_LABEL[j.name]||'');
     if(lab.includes('Head'))groups['머리'].push(j);
@@ -400,11 +400,11 @@ function buildSliders(joints){
   const within=n=>{n=n.toLowerCase();return n.includes('tilt')?0:n.includes('pan')?1:n.includes('shoulder')?0:n.includes('elbow')?1:n.includes('hip')?0:(n.includes('ankle')||n.includes('foot'))?1:2;};
   for(const k in groups)groups[k].sort((a,b)=>within(a.name)-within(b.name));
   const el=document.getElementById('jointsEl');
-  if(!movable.length){el.innerHTML='<div class="no-joint">가동 관절 없음</div>';return;}
+  if(!movable.length){el.innerHTML='<div class="no-joint">'+PIBO_T('가동 관절 없음')+'</div>';return;}
   let html='';
   for(const[gname,jlist]of Object.entries(groups)){
     if(!jlist.length)continue;const gid=sid(gname);
-    html+=`<div class="group-header" onclick="toggleG('${gid}')"><span class="garr open" id="arr_${gid}">&#x25B6;</span><span>${gname}</span><span style="color:#B0B7BE;margin-left:4px">(${jlist.length})</span></div><div class="group-body" id="gb_${gid}">`;
+    html+=`<div class="group-header" onclick="toggleG('${gid}')"><span class="garr open" id="arr_${gid}">&#x25B6;</span><span>${PIBO_T(gname)}</span><span style="color:#B0B7BE;margin-left:4px">(${jlist.length})</span></div><div class="group-body" id="gb_${gid}">`;
     for(const j of jlist){
       const isP=j.type==='prismatic';
       const mn=isP?'0':Math.round(j.limit.lower*180/Math.PI).toString();
