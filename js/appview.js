@@ -51,19 +51,19 @@ function drawTimeline(){
   for(const kf of sorted){
     const x=timeToX(kf.time);const sel=kf.id===selectedKfId;const R=sel?9:7;
     ctx.shadowBlur=0;
-    ctx.fillStyle=sel?'#E8590C':'#1C2530';
+    ctx.fillStyle=sel?'#0090A9':'#1C2530';
     ctx.beginPath();ctx.moveTo(x,TRACK_H/2-R);ctx.lineTo(x+R,TRACK_H/2);ctx.lineTo(x,TRACK_H/2+R);ctx.lineTo(x-R,TRACK_H/2);ctx.closePath();ctx.fill();
     ctx.shadowBlur=0;
-    ctx.strokeStyle=sel?'#E8590C66':'#1C253033';ctx.lineWidth=1;
+    ctx.strokeStyle=sel?'#0090A966':'#1C253033';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(x,TRACK_Y);ctx.lineTo(x,TRACK_H);ctx.stroke();
-    ctx.fillStyle=sel?'#E8590C':'#5A6572';ctx.font='9px IBM Plex Mono,monospace';ctx.fillText(kf.time.toFixed(2),x+4,TRACK_H/2-12);
+    ctx.fillStyle=sel?'#0090A9':'#5A6572';ctx.font='9px IBM Plex Mono,monospace';ctx.fillText(kf.time.toFixed(2),x+4,TRACK_H/2-12);
   }
   const px=timeToX(currentTime);
   ctx.shadowBlur=0;
-  ctx.strokeStyle='#E8590C';ctx.lineWidth=2;
+  ctx.strokeStyle='#0090A9';ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(px,TRACK_Y);ctx.lineTo(px,TRACK_H);ctx.stroke();
   ctx.shadowBlur=0;
-  ctx.fillStyle='#E8590C';
+  ctx.fillStyle='#0090A9';
   ctx.beginPath();ctx.moveTo(px-6,TRACK_Y);ctx.lineTo(px+6,TRACK_Y);ctx.lineTo(px,TRACK_Y+10);ctx.closePath();ctx.fill();
 }
 function getKfAtX(x){return keyframes.find(kf=>Math.abs(timeToX(kf.time)-x)<7)||null;}
@@ -201,7 +201,7 @@ cv.addEventListener('click',e=>{
   if(!hits.length)return;
   selectedMesh=hits[0].object;
   {const ms=Array.isArray(selectedMesh.material)?selectedMesh.material:[selectedMesh.material];
-   selectedOrigColor=ms.map(x=>x.color.getHex()); ms.forEach(x=>x.color.set(0xE8590C));}
+   selectedOrigColor=ms.map(x=>x.color.getHex()); ms.forEach(x=>x.color.set(0x00BEDC));}
   const lname=selectedMesh.userData.linkName;
   Object.values(jointDefs).forEach(j=>{
     if(j.child===lname||j.parent===lname){const el=document.getElementById('ji_'+sid(j.name));if(el){el.classList.add('highlight');el.scrollIntoView({block:'nearest',behavior:'smooth'});}}

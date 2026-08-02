@@ -3,18 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PIBO 체험툴</title>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap" rel="stylesheet">
+<title>PIBO 시뮬레이터 — 체험툴</title>
+<meta name="description" content="브라우저에서 PIBO 휴머노이드 로봇을 조작하고 모션을 만들어 보세요.">
+<meta property="og:title" content="PIBO 시뮬레이터">
+<meta property="og:description" content="브라우저에서 PIBO를 조작하고 모션을 만들어 실물 로봇으로 내보내기">
+<meta property="og:image" content="img/og.png">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<header style="gap:6px;padding:0 12px 0 16px">
-  <h1 style="margin-right:10px">PIBO 체험툴</h1>
-  <span class="navlink" style="background:#2E3338;color:#fff;border-color:#2E3338;cursor:default">체험툴</span>
+<header>
+  <h1><img src="img/pibo-logo.png" alt="PIBO">파이보 시뮬레이터</h1>
+  <span class="navlink on">체험툴</span>
   <a class="navlink" href="dev.html">개발툴</a>
   <a class="navlink" href="game.html">게임툴</a>
-  <span class="badge" id="statusBadge" style="border-right:none;padding:0 6px">준비</span>
+  <span class="badge" id="statusBadge">준비</span>
   <span style="flex:1"></span>
 </header>
 
@@ -22,26 +28,26 @@
   <div class="left">
     <div class="sec">
       <div class="sec-title">뷰</div>
-      <select class="tl-select" id="themeSel" style="width:100%;margin-bottom:5px"><option value="desk">배경: 책상</option><option value="dining">배경: 식탁</option><option value="bench">배경: 작업대</option><option value="road">배경: 주행 매트</option><option value="sumo">배경: 스모 링</option><option value="soccer">배경: 축구장</option><option value="space">배경: 우주 기지</option><option value="kitchen">배경: 주방 조리대</option><option value="plain">배경: 심플</option></select>
-      <button class="tb on" id="gridBtn"><span class="ic">&#x22DE;</span>그리드</button>
-      <button class="tb" id="ssBtn"><span class="ic">&#x1F4F7;</span>스크린샷</button>
+      <select class="tl-select" id="themeSel" style="width:100%;margin-bottom:6px"><option value="desk">배경: 책상</option><option value="dining">배경: 식탁</option><option value="bench">배경: 작업대</option><option value="road">배경: 주행 매트</option><option value="sumo">배경: 스모 링</option><option value="soccer">배경: 축구장</option><option value="space">배경: 우주 기지</option><option value="kitchen">배경: 주방 조리대</option><option value="plain">배경: 심플</option></select>
+      <button class="tb on" id="gridBtn"><i class="ic fa-solid fa-border-all"></i>그리드</button>
+      <button class="tb" id="ssBtn"><i class="ic fa-solid fa-camera"></i>스크린샷</button>
     </div>
     <div class="sec">
       <div class="sec-title">포즈</div>
-      <button class="tb" id="resetBtn"><span class="ic">&#x21BA;</span>리셋</button>
+      <button class="tb" id="resetBtn"><i class="ic fa-solid fa-rotate-left"></i>리셋</button>
     </div>
     <div class="sec">
       <div class="sec-title">LCD</div>
-      <input type="text" id="lcdText" placeholder="Hi, pibo" style="width:100%;padding:6px 8px;background:var(--panel2);border:1px solid var(--line-soft);border-radius:2px;font-size:11px;color:var(--ink);outline:none;font-family:var(--mono);margin-bottom:5px">
-      <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ink3)"><span>글씨색</span><input type="color" id="lcdColor" value="#ffffff" style="flex:1;height:26px;border:1px solid var(--line-soft);border-radius:2px;background:var(--panel2);cursor:pointer;padding:2px"></div>
+      <input type="text" id="lcdText" placeholder="Hi, pibo" style="width:100%;padding:7px 9px;background:var(--panel2);border:1px solid var(--line-soft);border-radius:8px;font-size:12px;color:var(--ink);outline:none;font-family:var(--sans);margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink3)"><span>글씨색</span><input type="color" id="lcdColor" value="#ffffff" style="flex:1;height:26px;border:1px solid var(--line-soft);border-radius:6px;background:var(--panel2);cursor:pointer;padding:2px"></div>
     </div>
     <div class="sec">
       <div class="sec-title">안경</div>
-      <div style="display:flex;gap:5px"><input type="color" id="glassColorL" value="#00e1ff" title="왼쪽 눈"  style="flex:1;height:30px;border:1px solid var(--line-soft);border-radius:2px;background:var(--panel2);cursor:pointer;padding:2px"><input type="color" id="glassColorR" value="#00e1ff" title="오른쪽 눈" style="flex:1;height:30px;border:1px solid var(--line-soft);border-radius:2px;background:var(--panel2);cursor:pointer;padding:2px"></div>
+      <div style="display:flex;gap:5px"><input type="color" id="glassColorL" value="#00e1ff" title="왼쪽 눈"  style="flex:1;height:30px;border:1px solid var(--line-soft);border-radius:6px;background:var(--panel2);cursor:pointer;padding:2px"><input type="color" id="glassColorR" value="#00e1ff" title="오른쪽 눈" style="flex:1;height:30px;border:1px solid var(--line-soft);border-radius:6px;background:var(--panel2);cursor:pointer;padding:2px"></div>
     </div>
     <div class="sec">
       <div class="sec-title">물리 시뮬</div>
-      <button class="tb" id="physBtn" disabled><span class="ic">&#x25CF;</span>물리 ON/OFF</button>
+      <button class="tb" id="physBtn" disabled><i class="ic fa-solid fa-bolt"></i>물리 ON/OFF</button>
       <div class="info-row"><span>엔진</span><span class="info-val" id="physEngine">로딩중</span></div>
       <div class="info-row"><span>상태</span><span class="info-val" id="physState">OFF</span></div>
       <div class="info-row"><span>기울기</span><span class="info-val" id="physTilt">-</span></div>
@@ -50,7 +56,7 @@
     <div class="sec" id="partColorSec" style="display:none">
       <div class="sec-title">파트 색상</div>
       <div id="partColors"></div>
-      <button class="tb" id="partResetBtn" style="margin-top:6px"><span class="ic">&#x21BA;</span>색상 되돌리기</button>
+      <button class="tb" id="partResetBtn" style="margin-top:6px"><i class="ic fa-solid fa-rotate-left"></i>색상 되돌리기</button>
     </div>
     <div class="sec" id="infoSec" style="display:none"><div id="infoRows"></div></div>
   </div>
@@ -58,31 +64,32 @@
   <div class="viewport" id="vp">
     <canvas id="cv"></canvas>
     <div class="empty-msg" id="emptyMsg">
-      <div class="em-icon">&#x1F916;</div>
-      <p class="em-msg">data/ 에서 모델을 불러옵니다<br><span style="font-size:10px;color:#B0B7BE">실패 시 새로고침</span></p>
+      <div class="em-icon" style="opacity:1"><img src="img/pibo-oops.png" alt=""></div>
+      <p class="em-msg">모델을 불러오지 못했어요<br><span style="font-size:11px;color:var(--ink3);font-weight:400">잠시 후 새로고침해 주세요</span></p>
     </div>
     <div class="load-overlay" id="loadOv" style="display:none">
+      <img class="load-char" src="img/pibo-hello.png" alt="">
       <div class="spinner" id="spinner"></div>
-      <div class="load-title" id="loadTitle">로딩 중...</div>
+      <div class="load-title" id="loadTitle">파이보를 불러오고 있어요</div>
       <div class="pbar-bg"><div class="pbar-fill" id="pbar"></div></div>
       <div class="pbar-text" id="ptext">준비 중...</div>
     </div>
     <div class="hud">
       <span id="fpsEl">FPS: --</span>
-      <span style="color:#B0B7BE">좌:회전 &nbsp; 우:이동 &nbsp; 휠:줌</span>
+      <span style="color:var(--ink3)">좌:회전 &nbsp; 우:이동 &nbsp; 휠:줌</span>
     </div>
-    <div id="miniMap" style="position:absolute;right:12px;bottom:12px;background:rgba(247,248,249,.92);border:1px solid var(--line);border-radius:2px;padding:6px 6px 3px;user-select:none">
-      <canvas id="miniCv" width="188" height="104" style="display:block"></canvas>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:3px">
-        <span id="miniLbl" style="font-size:9px;color:var(--ink3);font-family:var(--mono)">-</span>
-        <span id="miniClear" style="font-size:9px;color:var(--ink3);font-family:var(--mono);cursor:pointer;padding:0 2px">궤적 지우기</span>
+    <div id="miniMap" style="position:absolute;right:12px;bottom:12px;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:7px 7px 4px;user-select:none">
+      <canvas id="miniCv" width="188" height="104" style="display:block;border-radius:5px"></canvas>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+        <span id="miniLbl" class="num" style="font-size:10px;color:var(--ink3)">-</span>
+        <span id="miniClear" style="font-size:10px;font-weight:600;color:var(--ink3);cursor:pointer;padding:0 2px">궤적 지우기</span>
       </div>
     </div>
-    <div id="fallBanner" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#B33;color:#fff;padding:6px 18px;border-radius:2px;font-size:12px;font-weight:700;letter-spacing:.1em;display:none;pointer-events:none">넘어졌습니다</div>
+    <div id="fallBanner" style="display:none"><img src="img/pibo-fall.png" alt=""><span class="fb-txt">넘어졌어요!</span></div>
     <div id="vpTools">
-      <button class="zb" id="zoomIn"  title="확대">&#xFF0B;</button>
-      <button class="zb" id="zoomOut" title="축소">&#xFF0D;</button>
-      <button class="zb" id="zoomFit" title="화면에 맞추기">&#x2922;</button>
+      <button class="zb" id="zoomIn"  title="확대"><i class="fa-solid fa-plus"></i></button>
+      <button class="zb" id="zoomOut" title="축소"><i class="fa-solid fa-minus"></i></button>
+      <button class="zb" id="zoomFit" title="화면에 맞추기"><i class="fa-solid fa-expand"></i></button>
     </div>
     <div class="tooltip" id="tt"></div>
   </div>
@@ -101,13 +108,13 @@
 
 <div class="timeline-panel">
   <div class="tl-controls">
-    <button class="tl-btn" id="tlToStart" title="처음">&#x23EE;</button>
-    <button class="tl-btn" id="tlPlayPause" title="재생/정지">&#x25B6;</button>
-    <button class="tl-btn" id="tlStop" title="정지">&#x25A0;</button>
+    <button class="tl-btn" id="tlToStart" title="처음"><i class="fa-solid fa-backward-step"></i></button>
+    <button class="tl-btn" id="tlPlayPause" title="재생/정지">▶</button>
+    <button class="tl-btn" id="tlStop" title="정지"><i class="fa-solid fa-stop"></i></button>
     <span class="tl-time-display" id="tlTimeDisp">0.00s</span>
     <div class="tl-sep"></div>
     <button class="tl-btn accent" id="tlAddKf">+ 키프레임</button>
-    <button class="tl-btn danger" id="tlDelKf">&#x2715; 삭제</button>
+    <button class="tl-btn danger" id="tlDelKf"><i class="fa-solid fa-xmark"></i> 삭제</button>
     <div class="tl-sep"></div>
     <span class="tl-label">길이</span>
     <input class="tl-dur" id="tlDurInput" type="number" value="5" min="0.5" max="120" step="0.1">
@@ -122,13 +129,13 @@
       <option value="1.75">1.75×</option>
       <option value="2">2×</option>
     </select>
-    <button class="tl-btn" id="tlLoopBtn">&#x1F501; 루프</button>
+    <button class="tl-btn" id="tlLoopBtn"><i class="fa-solid fa-repeat"></i> 루프</button>
     <div class="tl-sep"></div>
-    <button class="tl-btn" id="tlSaveMotion">&#x1F4BE; 저장</button>
+    <button class="tl-btn" id="tlSaveMotion"><i class="fa-solid fa-floppy-disk"></i> 저장</button>
     <select class="tl-select" id="motionPick" title="내장 모션 불러오기" style="max-width:150px">
       <option value="">모션 선택</option>
     </select>
-    <button class="tl-btn" id="tlLoadMotion">&#x1F4C2; 불러오기</button>
+    <button class="tl-btn" id="tlLoadMotion"><i class="fa-solid fa-folder-open"></i> 불러오기</button>
     <input type="file" id="motionFileIn" accept=".json">
     <span class="tl-kf-count" id="tlKfCount">키프레임 0</span>
   </div>
