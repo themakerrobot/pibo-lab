@@ -776,10 +776,10 @@ function drawMiniMap(){
   const p = robotRoot.position;
   const inside = Math.abs(p.x) <= S.w/2 && Math.abs(p.z - S.cz) <= S.d/2;
   const fw = new THREE.Vector3(0,-1,0).applyQuaternion(robotRoot.quaternion); // URDF -Y = 정면(LCD·눈 쪽)
-  g.strokeStyle = inside ? '#E8590C' : '#B33'; g.lineWidth = 1.8;
+  g.strokeStyle = inside ? '#0090A9' : '#B33'; g.lineWidth = 1.8;
   g.beginPath(); g.moveTo(px(p.x), py(p.z));
   g.lineTo(px(p.x) - fw.x*11, py(p.z) - fw.z*11); g.stroke();
-  g.fillStyle = inside ? '#E8590C' : '#B33';
+  g.fillStyle = inside ? '#0090A9' : '#B33';
   g.beginPath(); g.arc(px(p.x), py(p.z), 3.6, 0, 7); g.fill();
   if(!inside){
     g.fillStyle = '#B33'; g.font = 'bold 9px monospace';

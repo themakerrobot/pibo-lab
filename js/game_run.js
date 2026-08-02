@@ -66,7 +66,7 @@ function gLog(msg, cls) {
   if (!el) return;
   const line = document.createElement('div');
   if (cls) line.className = cls;
-  line.textContent = msg;
+  line.textContent = (typeof PIBO_T === 'function') ? PIBO_T(msg) : msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
 }
