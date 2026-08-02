@@ -10,18 +10,20 @@
 <link rel="stylesheet" href="css/style.css">
 <style>
   html,body{height:100%;margin:0;overflow:hidden}
-  #gTop{height:46px;display:flex;align-items:center;gap:6px;padding:0 12px 0 16px;
-    background:var(--panel2,#FFFFFF);border-bottom:1px solid var(--line,#DDE1E4);flex-shrink:0;
+  #gTop{height:54px;display:flex;align-items:center;gap:8px;padding:0 14px;
+    background:var(--panel,#FFFFFF);border-bottom:1px solid var(--line,#DDE6EA);flex-shrink:0;
     font-family:var(--sans,-apple-system,'Segoe UI',sans-serif);font-size:12.5px}
-  #gTop .title{font-family:var(--sans,'Archivo','IBM Plex Sans KR',system-ui,sans-serif);font-size:15px;color:var(--ink,#233642);font-weight:800;letter-spacing:-.01em;height:100%;display:flex;align-items:center;padding-right:16px;border-right:1px solid var(--line,#DDE1E4);margin-right:10px}
+  #gTop .title{font-size:15.5px;color:var(--ink,#233642);font-weight:800;letter-spacing:-.01em;height:100%;display:flex;align-items:center;gap:9px;padding-right:14px}
   #gTop .sp{flex:1}
-  .db{border:1px solid var(--line,#DDE1E4);background:#fff;border-radius:2px;
-    padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit}
-  .db:hover{background:#EEF1F3}
+  .db{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line,#DDE6EA);background:var(--panel,#fff);color:var(--ink2,#5C6E79);border-radius:8px;
+    padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s}
+  .db:hover{border-color:var(--acc,#00BEDC);color:var(--acc-ink,#0090A9);background:var(--acc-soft,#E1F7FB)}
   .db:disabled{opacity:.4;cursor:default}
-  .db.run{background:#2E7D32;color:#fff;border-color:#2E7D32}
-  .db.stop{background:#B3352C;color:#fff;border-color:#B3352C}
-  #gMain{display:flex;height:calc(100% - 44px);min-width:0}
+  .db.run{background:var(--ok,#2E9E63);color:#fff;border-color:var(--ok,#2E9E63)}
+  .db.run:hover{background:#27884F;border-color:#27884F;color:#fff}
+  .db.stop{background:var(--warn,#E2574C);color:#fff;border-color:var(--warn,#E2574C)}
+  .db.stop:hover{background:#C94A40;border-color:#C94A40;color:#fff}
+  #gMain{display:flex;height:calc(100% - 54px);min-width:0}
   #gBlockly{flex:1;min-width:280px}
   #gSplit{width:6px;cursor:col-resize;background:var(--line,#DDE1E4);flex-shrink:0}
   #gSplit:hover,#gSplit.on{background:#8FA6B8}
@@ -58,16 +60,17 @@
 <body>
 
 <div id="gTop">
-  <span class="title"><img src="img/pibo-logo.png" alt="" style="height:26px;margin-right:8px">파이보 게임툴</span>
-  <a class="db" href="index.html" style="text-decoration:none;color:inherit">체험툴</a>
-  <a class="db" href="dev.html" style="text-decoration:none;color:inherit">개발툴</a>
-  <span class="db" style="background:#2E3338;color:#fff;border-color:#2E3338;cursor:default">게임툴</span>
-  <button class="db run" id="gBtnRun">▶ 실행</button>
-  <button class="db stop" id="gBtnStop" disabled>■ 정지</button>
-  <button class="db" id="gBtnClear">🗑 블록 지우기</button>
+  <span class="title"><img src="img/pibo-logo.png" alt="" style="height:30px">파이보 시뮬레이터</span>
+  <a class="navlink" href="index.html">체험툴</a>
+  <a class="navlink" href="dev.html">개발툴</a>
+  <span class="navlink on">게임툴</span>
+  <span style="width:1px;height:20px;background:var(--line-soft,#E7EEF1)"></span>
+  <button class="db run" id="gBtnRun"><i class="fa-solid fa-play"></i> 실행</button>
+  <button class="db stop" id="gBtnStop" disabled><i class="fa-solid fa-stop"></i> 정지</button>
+  <button class="db" id="gBtnClear"><i class="fa-solid fa-trash-can"></i> 블록 지우기</button>
   <span class="sp"></span>
-  <button class="db" id="gBtnSave">💾 저장</button>
-  <button class="db" id="gBtnLoad">📂 불러오기</button>
+  <button class="db" id="gBtnSave"><i class="fa-solid fa-floppy-disk"></i> 저장</button>
+  <button class="db" id="gBtnLoad"><i class="fa-solid fa-folder-open"></i> 불러오기</button>
   <input type="file" id="gFileIn" accept=".json" style="display:none">
 </div>
 
