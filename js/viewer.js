@@ -217,6 +217,24 @@ function setupLCD(){
   const cvs=document.createElement('canvas'); cvs.width=512; cvs.height=Math.max(64,Math.round(512*rz/rx));
   const ctx=cvs.getContext('2d');
   const tex=new THREE.CanvasTexture(cvs); tex.anisotropy=4;
+  // 좌측 상단 미러 미리보기 — pibo_oled.js 가 없는 페이지(체험툴)용. 이미 있으면 붙이지 않는다.
+  let pv=document.querySelector('#oledPreview canvas[data-owner="viewer"]'), pvg=null;
+  if(!pv && !document.getElementById('oledPreview')){
+    const vp=document.getElementById('vp');
+    if(vp){
+      const box=document.createElement('div');
+      box.id='oledPreview';
+      box.style.cssText='position:absolute;left:12px;top:10px;z-index:20;'+
+        'background:rgba(255,255,255,.94);border:1px solid var(--line,#DDE6EA);border-radius:10px;'+
+        'box-shadow:0 1px 2px rgba(35,54,66,.05),0 4px 14px rgba(35,54,66,.06);padding:7px 7px 4px;user-select:none';
+      pv=document.createElement('canvas'); pv.width=256; pv.height=128; pv.dataset.owner='viewer';
+      pv.style.cssText='display:block;width:256px;height:128px;border-radius:5px;background:#000';
+      const lbl=document.createElement('div'); lbl.textContent='OLED';
+      lbl.style.cssText='font-size:10px;color:var(--ink3,#96A5AE);margin-top:4px;font-weight:600';
+      box.appendChild(pv); box.appendChild(lbl); vp.appendChild(box);
+    }
+  }
+  if(pv) pvg=pv.getContext('2d');
   lcdDraw=function(txt){
     ctx.fillStyle='#000'; ctx.fillRect(0,0,cvs.width,cvs.height);
     ctx.fillStyle=lcdTextColor; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -224,6 +242,12 @@ function setupLCD(){
     while(t && ctx.measureText(t).width>cvs.width*0.9 && fs>14){ fs-=3; ctx.font='bold '+fs+'px sans-serif'; }
     ctx.fillText(t, cvs.width/2, cvs.height/2);
     tex.needsUpdate=true;
+    if(pvg){ // 비율 유지한 채 미리보기에 축소 표시
+      pvg.fillStyle='#000'; pvg.fillRect(0,0,pv.width,pv.height);
+      const sc=Math.min(pv.width/cvs.width, pv.height/cvs.height);
+      const w=cvs.width*sc, h=cvs.height*sc;
+      pvg.drawImage(cvs,(pv.width-w)/2,(pv.height-h)/2,w,h);
+    }
   };
   // 화면처럼 자체발광 (조명 영향 없이 또렷)
   lcdMesh.material.color.set(0x000000);
