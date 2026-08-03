@@ -46,8 +46,34 @@ const Oled = (function () {
     attached = true;
   }
 
+  // ── 좌측 상단 미러 미리보기 (로봇 몸통 OLED가 작아 잘 안 보이는 문제 보완) ──
+  let pv = null, pvg = null;
+  function mountPreview() {
+    if (pv) return;
+    const vp = document.getElementById('vp');
+    if (!vp) return;
+    const top = document.getElementById('gHud') ? 48 : 10;
+    const box = document.createElement('div');
+    box.id = 'oledPreview';
+    box.style.cssText = 'position:absolute;left:12px;top:' + top + 'px;z-index:20;' +
+      'background:rgba(255,255,255,.94);border:1px solid var(--line,#DDE6EA);border-radius:10px;' +
+      'box-shadow:0 1px 2px rgba(35,54,66,.05),0 4px 14px rgba(35,54,66,.06);padding:7px 7px 4px;user-select:none';
+    pv = document.createElement('canvas');
+    pv.width = W; pv.height = H;
+    pv.style.cssText = 'display:block;width:192px;height:96px;image-rendering:pixelated;border-radius:5px;background:#000';
+    const lbl = document.createElement('div');
+    lbl.textContent = 'OLED';
+    lbl.style.cssText = 'font-size:10px;color:var(--ink3,#96A5AE);margin-top:4px;font-weight:600';
+    box.appendChild(pv); box.appendChild(lbl);
+    vp.appendChild(box);
+    pvg = pv.getContext('2d');
+    pvg.imageSmoothingEnabled = false;
+  }
+
   function push() {
     attach();
+    mountPreview();
+    if (pvg) pvg.drawImage(buf, 0, 0);
     if (!tex) return;
     // 128×64 버퍼를 비율 유지한 채 가운데 정렬 (좌표계는 항상 0~127 / 0~63)
     // 실물은 LCD 겉을 프레임이 덮어 가장자리가 조금 가려진다.
