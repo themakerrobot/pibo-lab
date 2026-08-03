@@ -134,3 +134,8 @@ const Oled = (function () {
     reset() { inverted = false; fontSize = 10; clearBuf(); push(); },
   };
 })();
+
+// 개발툴·게임툴에서는 로드 직후부터 미리보기 표시 (검은 화면 = 실물 초기 상태)
+document.addEventListener('DOMContentLoaded', function () {
+  if (document.getElementById('devConsole') || document.getElementById('gConsole')) Oled.show();
+});
