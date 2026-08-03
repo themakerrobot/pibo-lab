@@ -1,12 +1,17 @@
-// ═══════════════════════════════════════════════════════════
 // OLED 에뮬레이션 — 128×64 캔버스를 몸통 LCD 텍스처로 출력
-// ═══════════════════════════════════════════════════════════
 // 실물 openpibo 와 동작을 맞춤: draw_* 는 버퍼에만 그리고, show() 해야 화면에 나온다.
+// 미리보기 품질을 위해 같은 내용을 4배 해상도 버퍼(hi)에도 함께 그린다.
+//   · buf(128×64)  → 몸통 텍스처 (실물과 동일한 픽셀 해상도)
+//   · hi (512×256) → 좌측 상단 미리보기 (벡터로 그려 글씨가 선명)
 const Oled = (function () {
-  const W = 128, H = 64;
+  const W = 128, H = 64, SC = 4;
   const buf = document.createElement('canvas');
   buf.width = W; buf.height = H;
   const g = buf.getContext('2d');
+  const hi = document.createElement('canvas');
+  hi.width = W * SC; hi.height = H * SC;
+  const hg = hi.getContext('2d');
+  hg.setTransform(SC, 0, 0, SC, 0, 0);   // 0~127 / 0~63 좌표계 공유
   // 프레임에 가려지는 만큼 안으로 넣는 비율.
   //   글씨 크기 10 에서 한글 한 글자 = 10px, 그 절반인 5px 를 좌우/상하에서 확보
   //   → (128 - 5*2) / 128 = 0.9219.  더 넣고 싶으면 이 값만 낮추면 된다.
@@ -22,6 +27,7 @@ const Oled = (function () {
 
   function clearBuf() {
     g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    hg.fillStyle = '#000'; hg.fillRect(0, 0, W, H);
   }
   clearBuf();
 
@@ -52,28 +58,26 @@ const Oled = (function () {
     if (pv) return;
     const vp = document.getElementById('vp');
     if (!vp) return;
-    const top = document.getElementById('gHud') ? 48 : 10;
     const box = document.createElement('div');
     box.id = 'oledPreview';
-    box.style.cssText = 'position:absolute;left:12px;top:' + top + 'px;z-index:20;' +
+    box.style.cssText = 'position:absolute;left:12px;top:10px;z-index:20;' +
       'background:rgba(255,255,255,.94);border:1px solid var(--line,#DDE6EA);border-radius:10px;' +
       'box-shadow:0 1px 2px rgba(35,54,66,.05),0 4px 14px rgba(35,54,66,.06);padding:7px 7px 4px;user-select:none';
     pv = document.createElement('canvas');
-    pv.width = W; pv.height = H;
-    pv.style.cssText = 'display:block;width:192px;height:96px;image-rendering:pixelated;border-radius:5px;background:#000';
+    pv.width = W * SC; pv.height = H * SC;   // 고해상도 버퍼 그대로 담고 CSS 로 축소 표시
+    pv.style.cssText = 'display:block;width:192px;height:96px;border-radius:5px;background:#000';
     const lbl = document.createElement('div');
     lbl.textContent = 'OLED';
     lbl.style.cssText = 'font-size:10px;color:var(--ink3,#96A5AE);margin-top:4px;font-weight:600';
     box.appendChild(pv); box.appendChild(lbl);
     vp.appendChild(box);
     pvg = pv.getContext('2d');
-    pvg.imageSmoothingEnabled = false;
   }
 
   function push() {
     attach();
     mountPreview();
-    if (pvg) pvg.drawImage(buf, 0, 0);
+    if (pvg) pvg.drawImage(hi, 0, 0);
     if (!tex) return;
     // 128×64 버퍼를 비율 유지한 채 가운데 정렬 (좌표계는 항상 0~127 / 0~63)
     // 실물은 LCD 겉을 프레임이 덮어 가장자리가 조금 가려진다.
@@ -90,34 +94,45 @@ const Oled = (function () {
   const ink = () => (inverted ? '#000' : '#fff');
   const paper = () => (inverted ? '#fff' : '#000');
 
+  // buf 와 hi 에 같은 그리기를 수행 (hi 는 4배 변환이 걸려 있어 좌표 코드는 동일)
+  function both(fn) { fn(g); fn(hg); }
+
   return {
     setFont(size) { fontSize = Math.max(6, Math.min(H, Number(size) || 10)); },
 
     text(x, y, t) {
-      g.fillStyle = ink();
-      g.font = 'bold ' + fontSize + 'px sans-serif';
-      g.textBaseline = 'top';
-      g.fillText(String(t), Number(x) || 0, Number(y) || 0);
+      both(c => {
+        c.fillStyle = ink();
+        c.font = 'bold ' + fontSize + 'px sans-serif';
+        c.textBaseline = 'top';
+        c.fillText(String(t), Number(x) || 0, Number(y) || 0);
+      });
     },
 
     rect(x1, y1, x2, y2, fill) {
       const x = Math.min(x1, x2), y = Math.min(y1, y2);
       const w = Math.abs(x2 - x1), h = Math.abs(y2 - y1);
-      g.strokeStyle = g.fillStyle = ink(); g.lineWidth = 1;
-      fill ? g.fillRect(x, y, w, h) : g.strokeRect(x + 0.5, y + 0.5, w, h);
+      both(c => {
+        c.strokeStyle = c.fillStyle = ink(); c.lineWidth = 1;
+        fill ? c.fillRect(x, y, w, h) : c.strokeRect(x + 0.5, y + 0.5, w, h);
+      });
     },
 
     ellipse(x1, y1, x2, y2, fill) {
       const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
       const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
-      g.strokeStyle = g.fillStyle = ink(); g.lineWidth = 1;
-      g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-      fill ? g.fill() : g.stroke();
+      both(c => {
+        c.strokeStyle = c.fillStyle = ink(); c.lineWidth = 1;
+        c.beginPath(); c.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        fill ? c.fill() : c.stroke();
+      });
     },
 
     line(x1, y1, x2, y2) {
-      g.strokeStyle = ink(); g.lineWidth = 1;
-      g.beginPath(); g.moveTo(x1 + 0.5, y1 + 0.5); g.lineTo(x2 + 0.5, y2 + 0.5); g.stroke();
+      both(c => {
+        c.strokeStyle = ink(); c.lineWidth = 1;
+        c.beginPath(); c.moveTo(x1 + 0.5, y1 + 0.5); c.lineTo(x2 + 0.5, y2 + 0.5); c.stroke();
+      });
     },
 
     invert() {
@@ -125,12 +140,22 @@ const Oled = (function () {
       const img = g.getImageData(0, 0, W, H), d = img.data;
       for (let i = 0; i < d.length; i += 4) { d[i] = 255 - d[i]; d[i + 1] = 255 - d[i + 1]; d[i + 2] = 255 - d[i + 2]; }
       g.putImageData(img, 0, 0);
+      const img2 = hg.getImageData(0, 0, W * SC, H * SC), d2 = img2.data;
+      for (let i = 0; i < d2.length; i += 4) { d2[i] = 255 - d2[i]; d2[i + 1] = 255 - d2[i + 1]; d2[i + 2] = 255 - d2[i + 2]; }
+      hg.putImageData(img2, 0, 0);
     },
 
-    clear() { g.fillStyle = paper(); g.fillRect(0, 0, W, H); },
+    clear() {
+      both(c => { c.fillStyle = paper(); c.fillRect(0, 0, W, H); });
+    },
 
     show() { push(); },
 
     reset() { inverted = false; fontSize = 10; clearBuf(); push(); },
   };
 })();
+
+// 개발툴·게임툴에서는 로드 직후부터 미리보기 표시 (검은 화면 = 실물 초기 상태)
+document.addEventListener('DOMContentLoaded', function () {
+  if (document.getElementById('devConsole') || document.getElementById('gConsole')) Oled.show();
+});
