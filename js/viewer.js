@@ -43,10 +43,14 @@ let selectedKfId=null;
 let playLastT=null;
 let tlDragging=false,tlDragKfId=null,tlSeeking=false;
 
-// RENDER LOOP
+// RENDER LOOP — 60fps 캡 (고주사율 모니터에서 불필요한 GPU/CPU 부하 방지)
+const FRAME_MS=1000/60;
+let nextFrame=0;
 let fps=0,fpsT=performance.now();
 function renderLoop(now){
   requestAnimationFrame(renderLoop);
+  if(now<nextFrame) return;
+  nextFrame=Math.max(nextFrame+FRAME_MS, now);
   if(isPlaying){
     if(playLastT!==null){
       currentTime+=(now-playLastT)/1000*playSpeed;
