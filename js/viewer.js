@@ -228,7 +228,7 @@ function setupLCD(){
         'background:rgba(255,255,255,.94);border:1px solid var(--line,#DDE6EA);border-radius:10px;'+
         'box-shadow:0 1px 2px rgba(35,54,66,.05),0 4px 14px rgba(35,54,66,.06);padding:7px 7px 4px;user-select:none';
       pv=document.createElement('canvas'); pv.width=256; pv.height=128; pv.dataset.owner='viewer';
-      pv.style.cssText='display:block;width:256px;height:128px;border-radius:5px;background:#000';
+      pv.style.cssText='display:block;width:192px;height:96px;border-radius:5px;background:#000';
       const lbl=document.createElement('div'); lbl.textContent='OLED';
       lbl.style.cssText='font-size:10px;color:var(--ink3,#96A5AE);margin-top:4px;font-weight:600';
       box.appendChild(pv); box.appendChild(lbl); vp.appendChild(box);
