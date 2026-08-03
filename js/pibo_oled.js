@@ -52,10 +52,9 @@ const Oled = (function () {
     if (pv) return;
     const vp = document.getElementById('vp');
     if (!vp) return;
-    const top = document.getElementById('gHud') ? 48 : 10;
     const box = document.createElement('div');
     box.id = 'oledPreview';
-    box.style.cssText = 'position:absolute;left:12px;top:' + top + 'px;z-index:20;' +
+    box.style.cssText = 'position:absolute;left:12px;top:10px;z-index:20;' +
       'background:rgba(255,255,255,.94);border:1px solid var(--line,#DDE6EA);border-radius:10px;' +
       'box-shadow:0 1px 2px rgba(35,54,66,.05),0 4px 14px rgba(35,54,66,.06);padding:7px 7px 4px;user-select:none';
     pv = document.createElement('canvas');
