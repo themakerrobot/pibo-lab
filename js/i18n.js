@@ -52,6 +52,7 @@ const PIBO_I18N = {
   '좌:회전 &nbsp; 우:이동 &nbsp; 휠:줌': 'L: rotate &nbsp; R: pan &nbsp; Wheel: zoom',
   '궤적 지우기': 'Clear trail',
   '넘어졌습니다': 'Fallen over',
+  '넘어졌어요!': 'Oops, fell over!',
   '확대': 'Zoom in',
   '축소': 'Zoom out',
   '화면에 맞추기': 'Fit to view',
