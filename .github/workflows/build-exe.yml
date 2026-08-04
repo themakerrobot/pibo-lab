@@ -27,6 +27,11 @@ jobs:
             ./ build/site/
           cp tools/portable/main.go tools/portable/go.mod build/
 
+      - name: Embed icon
+        run: |
+          go install github.com/akavel/rsrc@v0.10.2
+          $(go env GOPATH)/bin/rsrc -ico tools/portable/icon.ico -o build/rsrc.syso
+
       - name: Build exe
         run: cd build && GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o PiboLab.exe .
 
