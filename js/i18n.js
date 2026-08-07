@@ -374,7 +374,7 @@ function mountLangToggle() {
   wrap.id = 'langToggle';
   wrap.style.cssText = 'display:inline-flex;gap:4px;align-items:center';
 
-  [['ko', '한국어'], ['en', 'EN']].forEach(function (p) {
+  [['ko', '한'], ['en', 'EN']].forEach(function (p) {
     const on = PIBO_LANG === p[0];
     const b = document.createElement('button');
     b.textContent = p[1];
@@ -382,7 +382,8 @@ function mountLangToggle() {
       'border:1px solid ' + (on ? 'var(--acc,#00BEDC)' : 'var(--line,#DDE6EA)') + ';' +
       'background:' + (on ? 'var(--acc,#00BEDC)' : 'var(--panel,#fff)') + ';' +
       'color:' + (on ? 'var(--acc-deep,#04303A)' : 'var(--ink2,#5C6E79)') + ';' +
-      'border-radius:999px;padding:6px 13px;font-size:12px;font-weight:600;' +
+      'border-radius:999px;padding:6px 10px;font-size:12px;font-weight:600;' +
+      'min-width:38px;text-align:center;line-height:1;' +
       'font-family:inherit;cursor:' + (on ? 'default' : 'pointer');
     if (!on) b.addEventListener('click', function () { setLanguage(p[0]); });
     wrap.appendChild(b);
