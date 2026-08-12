@@ -1,0 +1,669 @@
+// 게임툴 내장 예제
+//   game.html 의 [예제] 버튼에서 사용한다.
+//   fetch 를 쓰지 않고 소스에 박아두어 file:// 로 열어도 동작한다.
+//   예제를 늘리려면 GAME_EXAMPLES 에 { name, desc, data } 를 추가하면
+//   버튼이 자동으로 선택 메뉴로 바뀐다.
+
+const GAME_EXAMPLES = [
+  {
+    name: '동전 모으기',
+    desc: '방향키로 움직여 동전과 보석을 모으고 도착점으로',
+    data: {
+      "blocks": {
+        "languageVersion": 0,
+        "blocks": [
+          {
+            "type": "game_start",
+            "x": 40,
+            "y": 40,
+            "next": {
+              "block": {
+                "type": "game_speak",
+                "inputs": {
+                  "MSG": {
+                    "shadow": {
+                      "type": "text",
+                      "fields": {
+                        "TEXT": "안녕! 나는 파이보야. 동전을 모아줘"
+                      }
+                    }
+                  }
+                },
+                "next": {
+                  "block": {
+                    "type": "game_add_item",
+                    "fields": {
+                      "KIND": "coin"
+                    },
+                    "inputs": {
+                      "X": {
+                        "shadow": {
+                          "type": "math_number",
+                          "fields": {
+                            "NUM": -0.15
+                          }
+                        }
+                      },
+                      "Z": {
+                        "shadow": {
+                          "type": "math_number",
+                          "fields": {
+                            "NUM": 0.15
+                          }
+                        }
+                      }
+                    },
+                    "next": {
+                      "block": {
+                        "type": "game_add_item",
+                        "fields": {
+                          "KIND": "coin"
+                        },
+                        "inputs": {
+                          "X": {
+                            "shadow": {
+                              "type": "math_number",
+                              "fields": {
+                                "NUM": 0.15
+                              }
+                            }
+                          },
+                          "Z": {
+                            "shadow": {
+                              "type": "math_number",
+                              "fields": {
+                                "NUM": 0.15
+                              }
+                            }
+                          }
+                        },
+                        "next": {
+                          "block": {
+                            "type": "game_add_item",
+                            "fields": {
+                              "KIND": "coin"
+                            },
+                            "inputs": {
+                              "X": {
+                                "shadow": {
+                                  "type": "math_number",
+                                  "fields": {
+                                    "NUM": 0.0
+                                  }
+                                }
+                              },
+                              "Z": {
+                                "shadow": {
+                                  "type": "math_number",
+                                  "fields": {
+                                    "NUM": 0.3
+                                  }
+                                }
+                              }
+                            },
+                            "next": {
+                              "block": {
+                                "type": "game_add_item",
+                                "fields": {
+                                  "KIND": "gem"
+                                },
+                                "inputs": {
+                                  "X": {
+                                    "shadow": {
+                                      "type": "math_number",
+                                      "fields": {
+                                        "NUM": 0.2
+                                      }
+                                    }
+                                  },
+                                  "Z": {
+                                    "shadow": {
+                                      "type": "math_number",
+                                      "fields": {
+                                        "NUM": 0.35
+                                      }
+                                    }
+                                  }
+                                },
+                                "next": {
+                                  "block": {
+                                    "type": "game_add_wall",
+                                    "inputs": {
+                                      "X": {
+                                        "shadow": {
+                                          "type": "math_number",
+                                          "fields": {
+                                            "NUM": 0.0
+                                          }
+                                        }
+                                      },
+                                      "Z": {
+                                        "shadow": {
+                                          "type": "math_number",
+                                          "fields": {
+                                            "NUM": 0.22
+                                          }
+                                        }
+                                      },
+                                      "W": {
+                                        "shadow": {
+                                          "type": "math_number",
+                                          "fields": {
+                                            "NUM": 0.2
+                                          }
+                                        }
+                                      },
+                                      "D": {
+                                        "shadow": {
+                                          "type": "math_number",
+                                          "fields": {
+                                            "NUM": 0.04
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "next": {
+                                      "block": {
+                                        "type": "game_add_goal",
+                                        "inputs": {
+                                          "X": {
+                                            "shadow": {
+                                              "type": "math_number",
+                                              "fields": {
+                                                "NUM": 0.0
+                                              }
+                                            }
+                                          },
+                                          "Z": {
+                                            "shadow": {
+                                              "type": "math_number",
+                                              "fields": {
+                                                "NUM": 0.45
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "next": {
+                                          "block": {
+                                            "type": "game_eye",
+                                            "fields": {
+                                              "SIDE": "both"
+                                            },
+                                            "next": {
+                                              "block": {
+                                                "type": "game_lcd",
+                                                "inputs": {
+                                                  "MSG": {
+                                                    "shadow": {
+                                                      "type": "text",
+                                                      "fields": {
+                                                        "TEXT": "GO!"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            "inputs": {
+                                              "COLOR": {
+                                                "shadow": {
+                                                  "type": "colour_picker",
+                                                  "fields": {
+                                                    "COLOUR": "#e8b33c"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "game_on_key",
+            "x": 40,
+            "y": 430,
+            "fields": {
+              "KEY": "ArrowUp"
+            },
+            "inputs": {
+              "DO": {
+                "block": {
+                  "type": "game_move",
+                  "fields": {
+                    "DIR": "1"
+                  },
+                  "inputs": {
+                    "N": {
+                      "shadow": {
+                        "type": "math_number",
+                        "fields": {
+                          "NUM": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "game_on_key",
+            "x": 40,
+            "y": 540,
+            "fields": {
+              "KEY": "ArrowDown"
+            },
+            "inputs": {
+              "DO": {
+                "block": {
+                  "type": "game_move",
+                  "fields": {
+                    "DIR": "-1"
+                  },
+                  "inputs": {
+                    "N": {
+                      "shadow": {
+                        "type": "math_number",
+                        "fields": {
+                          "NUM": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "game_on_key",
+            "x": 40,
+            "y": 650,
+            "fields": {
+              "KEY": "ArrowLeft"
+            },
+            "inputs": {
+              "DO": {
+                "block": {
+                  "type": "game_turn",
+                  "fields": {
+                    "DIR": "-1"
+                  },
+                  "inputs": {
+                    "N": {
+                      "shadow": {
+                        "type": "math_number",
+                        "fields": {
+                          "NUM": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "game_on_key",
+            "x": 40,
+            "y": 760,
+            "fields": {
+              "KEY": "ArrowRight"
+            },
+            "inputs": {
+              "DO": {
+                "block": {
+                  "type": "game_turn",
+                  "fields": {
+                    "DIR": "1"
+                  },
+                  "inputs": {
+                    "N": {
+                      "shadow": {
+                        "type": "math_number",
+                        "fields": {
+                          "NUM": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "game_on_event",
+            "x": 470,
+            "y": 40,
+            "fields": {
+              "EVT": "coin"
+            },
+            "inputs": {
+              "DO": {
+                "block": {
+                  "type": "game_add_score",
+                  "inputs": {
+                    "N": {
+                      "shadow": {
+                        "type": "math_number",
+                        "fields": {
+                          "NUM": 1
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "game_say",
+                      "inputs": {
+                        "MSG": {
+                          "shadow": {
+                            "type": "text",
+                            "fields": {
+                              "TEXT": "동전 +1"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "game_on_event",
+            "x": 470,
+            "y": 190,
+            "fields": {
+              "EVT": "gem"
+            },
+            "inputs": {
+              "DO": {
+                "block": {
+                  "type": "game_add_score",
+                  "inputs": {
+                    "N": {
+                      "shadow": {
+                        "type": "math_number",
+                        "fields": {
+                          "NUM": 5
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "game_motion",
+                      "fields": {
+                        "NAME": "cheer3"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "game_eye",
+                          "fields": {
+                            "SIDE": "both"
+                          },
+                          "inputs": {
+                            "COLOR": {
+                              "shadow": {
+                                "type": "colour_picker",
+                                "fields": {
+                                  "COLOUR": "#4fbf6a"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "game_on_event",
+            "x": 470,
+            "y": 340,
+            "fields": {
+              "EVT": "goal"
+            },
+            "inputs": {
+              "DO": {
+                "block": {
+                  "type": "controls_if",
+                  "extraState": {
+                    "hasElse": true
+                  },
+                  "inputs": {
+                    "IF0": {
+                      "block": {
+                        "type": "logic_compare",
+                        "fields": {
+                          "OP": "EQ"
+                        },
+                        "inputs": {
+                          "A": {
+                            "block": {
+                              "type": "game_item_left",
+                              "fields": {
+                                "KIND": "any"
+                              }
+                            }
+                          },
+                          "B": {
+                            "shadow": {
+                              "type": "math_number",
+                              "fields": {
+                                "NUM": 0
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "DO0": {
+                      "block": {
+                        "type": "game_speak",
+                        "inputs": {
+                          "MSG": {
+                            "block": {
+                              "type": "text_join",
+                              "extraState": {
+                                "itemCount": 2
+                              },
+                              "inputs": {
+                                "ADD0": {
+                                  "block": {
+                                    "type": "game_get_time"
+                                  }
+                                },
+                                "ADD1": {
+                                  "block": {
+                                    "type": "text",
+                                    "fields": {
+                                      "TEXT": "초 만에 성공했어!"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "next": {
+                          "block": {
+                            "type": "game_over",
+                            "fields": {
+                              "RESULT": "win"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "ELSE": {
+                      "block": {
+                        "type": "game_say",
+                        "inputs": {
+                          "MSG": {
+                            "shadow": {
+                              "type": "text",
+                              "fields": {
+                                "TEXT": "동전을 먼저 다 모으세요"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "game_on_event",
+            "x": 470,
+            "y": 590,
+            "fields": {
+              "EVT": "fallOff"
+            },
+            "inputs": {
+              "DO": {
+                "block": {
+                  "type": "game_add_life",
+                  "inputs": {
+                    "N": {
+                      "shadow": {
+                        "type": "math_number",
+                        "fields": {
+                          "NUM": -1
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "game_say",
+                      "inputs": {
+                        "MSG": {
+                          "shadow": {
+                            "type": "text",
+                            "fields": {
+                              "TEXT": "떨어졌어요!"
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "game_goto",
+                          "inputs": {
+                            "X": {
+                              "shadow": {
+                                "type": "math_number",
+                                "fields": {
+                                  "NUM": 0
+                                }
+                              }
+                            },
+                            "Z": {
+                              "shadow": {
+                                "type": "math_number",
+                                "fields": {
+                                  "NUM": 0
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "game_on_event",
+            "x": 470,
+            "y": 780,
+            "fields": {
+              "EVT": "fall"
+            },
+            "inputs": {
+              "DO": {
+                "block": {
+                  "type": "game_eye",
+                  "fields": {
+                    "SIDE": "both"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "game_say",
+                      "inputs": {
+                        "MSG": {
+                          "shadow": {
+                            "type": "text",
+                            "fields": {
+                              "TEXT": "넘어졌어요"
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "game_wait",
+                          "inputs": {
+                            "SEC": {
+                              "shadow": {
+                                "type": "math_number",
+                                "fields": {
+                                  "NUM": 1
+                                }
+                              }
+                            }
+                          },
+                          "next": {
+                            "block": {
+                              "type": "game_motion",
+                              "fields": {
+                                "NAME": "stop"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "inputs": {
+                    "COLOR": {
+                      "shadow": {
+                        "type": "colour_picker",
+                        "fields": {
+                          "COLOUR": "#d8323c"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+];
