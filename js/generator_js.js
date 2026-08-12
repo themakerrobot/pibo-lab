@@ -87,6 +87,14 @@
   // 내장 text_print 는 window.alert 을 부른다 → 콘솔 출력으로 교체
   G['text_print'] = b => `simPrint(${val(b, 'TEXT', "''")});\n`;
 
+  // 내장 text_prompt 계열은 window.prompt 을 부른다 → 콘솔 인라인 입력으로 교체.
+  // window.prompt 은 동기 블로킹이라 입력을 기다리는 동안 3D 렌더링까지 멈춘다.
+  // 블록 정의·JSON 은 그대로라 실물(Python input())로 옮겨도 호환된다.
+  G['text_prompt_ext'] = b =>
+    [`simPrompt(${val(b, 'TEXT', "''")}, '${b.getFieldValue('TYPE') || 'TEXT'}')`, ORD_ATOMIC];
+  G['text_prompt'] = b =>
+    [`simPrompt(${JSON.stringify(b.getFieldValue('TEXT') || '')}, '${b.getFieldValue('TYPE') || 'TEXT'}')`, ORD_ATOMIC];
+
   // ── 사용자 정의 함수 안에서도 대기가 되도록 ──
   // JS-Interpreter 를 쓰므로 async 전염 문제는 없다. 원본 제너레이터를 그대로 둔다.
 

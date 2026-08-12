@@ -50,6 +50,63 @@ function speakAsync(text, volume, voice) {
   });
 }
 
+// ── 콘솔 인라인 입력 (실물의 input() / 브라우저 prompt() 대체) ──
+// window.prompt 은 브라우저를 통째로 멈춰서 3D 렌더링까지 정지시킨다.
+// 콘솔 안에 입력줄을 그려서 비동기로 받으면 파이보는 계속 움직인다.
+let pendingPrompt = null;
+
+function promptAsync(msg, type) {
+  const isNum = (type === 'NUMBER');
+  return new Promise(res => {
+    const box = document.getElementById('devConsole');
+    if (!box) return res(isNum ? 0 : '');
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;margin:5px 0;padding:7px 9px;' +
+      'background:#22262A;border:1px solid #00BEDC;border-radius:6px';
+
+    const label = document.createElement('span');
+    label.textContent = String(msg == null ? '' : msg);
+    label.style.cssText = 'color:#00BEDC;font-weight:600;white-space:pre-wrap;flex-shrink:0';
+
+    const input = document.createElement('input');
+    input.type = isNum ? 'number' : 'text';
+    if (isNum) input.step = 'any';
+    input.style.cssText = 'flex:1;min-width:60px;background:#15181A;border:1px solid #3A4046;' +
+      'border-radius:4px;color:#E6EDF3;font-family:inherit;font-size:12px;padding:4px 7px;outline:none';
+
+    const btn = document.createElement('button');
+    btn.textContent = (typeof PIBO_T === 'function') ? PIBO_T('입력') : '입력';
+    btn.style.cssText = 'flex-shrink:0;background:#00BEDC;border:0;border-radius:4px;color:#04303A;' +
+      'font-family:inherit;font-size:12px;font-weight:700;padding:5px 12px;cursor:pointer';
+
+    row.appendChild(label); row.appendChild(input); row.appendChild(btn);
+    box.appendChild(row);
+    box.scrollTop = box.scrollHeight;
+    setTimeout(() => input.focus(), 0);
+
+    // 정지 버튼이 먹도록 대기 중인 입력을 밖에서 취소할 수 있게 걸어둔다
+    const finish = (raw) => {
+      if (pendingPrompt !== finish) return;
+      pendingPrompt = null;
+      input.disabled = btn.disabled = true;
+      row.style.borderColor = '#3A4046';
+      input.style.color = '#8B949E';
+      res(isNum ? (Number(raw) || 0) : String(raw));
+    };
+    pendingPrompt = finish;
+
+    btn.addEventListener('click', () => finish(input.value));
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); finish(input.value); }
+    });
+  });
+}
+
+function cancelPrompt() {
+  if (pendingPrompt) pendingPrompt('');
+}
+
 // ── 인터프리터에 노출할 함수들 ──
 function buildInterpreterApi(interp, scope) {
   const set = (name, fn) => interp.setProperty(scope, name, interp.createNativeFunction(fn));
@@ -104,6 +161,9 @@ function buildInterpreterApi(interp, scope) {
     devLog('▶ ' + n);
     Pibo.playMotion(n, Number(cycle) || 1).then(() => cb()).catch(err => { devLog(PIBO_T('모션 오류') + ': ' + err, 'err'); cb(); });
   });
+  setAsync('simPrompt', (msg, type, cb) => {
+    promptAsync(native(msg), String(native(type) || 'TEXT')).then(v => cb(v));
+  });
 }
 
 // ── 실행 / 정지 ──
@@ -113,7 +173,7 @@ function devRun() {
 
   Blockly.JavaScript.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
   Blockly.JavaScript.addReservedWords('highlightBlock,simSleep,simSpeak,simPlayMotion,simSetMotor,' +
-    'simSetMotors,simInitMotion,simEye,simEyeRGB,simOled,simNote,simPrint,simNow,simGetMotionList,simAngle');
+    'simSetMotors,simInitMotion,simEye,simEyeRGB,simOled,simNote,simPrint,simNow,simGetMotionList,simAngle,simPrompt');
 
   let code;
   try {
@@ -169,6 +229,7 @@ function devStop() {
   simRunning = false;
   simInterp = null;
   setRunUI(false);
+  cancelPrompt();
   if (window.speechSynthesis) speechSynthesis.cancel();
   if (devWorkspace) devWorkspace.highlightBlock(null);
   devLog(PIBO_T('정지'), 'warn');
