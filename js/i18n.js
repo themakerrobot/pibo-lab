@@ -256,6 +256,7 @@ const PIBO_I18N = {
   '성공!': 'You win!',
   '실패…': 'You lose...',
   '실행 끝': 'Finished',
+  '입력': 'Enter',
   '블록이 없습니다.': 'There are no blocks.',
   "'게임 시작하면' 블록에 연결해 주세요.": "Connect your blocks to the 'when the game starts' block.",
   '잘했어요!': 'Well done!',

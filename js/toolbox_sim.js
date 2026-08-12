@@ -70,7 +70,9 @@ const SIM_TOOLBOX = {
         { kind: 'block', type: 'text_trim', inputs: { TEXT: T('abc') } },
         { kind: 'block', type: 'text_count', inputs: { SUB: T(TR('a')), TEXT: T(TR('abc')) } },
         { kind: 'block', type: 'text_replace', inputs: { FROM: T(TR('b')), TO: T(TR('c')), TEXT: T(TR('abc')) } },
+        { kind: 'block', type: 'text_reverse', inputs: { TEXT: T(TR('abc')) } },
         { kind: 'block', type: 'text_print', inputs: { TEXT: T(TR('abc')) } },
+        { kind: 'block', type: 'text_prompt_ext', inputs: { TEXT: T(TR('abc')) } },
       ] },
 
     { kind: 'category', name: TR('lists'), colour: '#4DB6AC',
