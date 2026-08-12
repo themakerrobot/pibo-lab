@@ -71,6 +71,7 @@
   <span class="sp"></span>
   <button class="db" id="gBtnSave"><i class="fa-solid fa-floppy-disk"></i> 저장</button>
   <button class="db" id="gBtnLoad"><i class="fa-solid fa-folder-open"></i> 불러오기</button>
+  <button class="db" id="gBtnExample"><i class="fa-solid fa-lightbulb"></i> 예제</button>
   <input type="file" id="gFileIn" accept=".json" style="display:none">
 </div>
 
@@ -162,6 +163,7 @@
 <script src="js/game_blocks.js?v=15"></script>
 <script src="js/game_gen.js?v=15"></script>
 <script src="js/game_toolbox.js?v=15"></script>
+<script src="js/game_examples.js?v=15"></script>
 <script src="js/game_run.js?v=15"></script>
 
 <script>
@@ -216,6 +218,47 @@ document.getElementById('gBtnSave').addEventListener('click', () => {
   gLog('저장: pibo_game.json');
 });
 document.getElementById('gBtnLoad').addEventListener('click', () => document.getElementById('gFileIn').click());
+
+// 예제 불러오기 (js/game_examples.js 에 내장)
+function gLoadExample(ex) {
+  if (!ex) return;
+  if (gameWorkspace.getAllBlocks(false).length &&
+      !confirm(PIBO_T('작업 중인 블록을 지우고 예제를 불러올까요?'))) return;
+  try {
+    gameStop();
+    gameWorkspace.clear();
+    Blockly.serialization.workspaces.load(ex.data, gameWorkspace);
+    gLog(PIBO_T('예제를 불러왔습니다') + ': ' + PIBO_T(ex.name));
+    if (ex.desc) gLog(PIBO_T(ex.desc));
+  } catch (err) { gLog(PIBO_T('예제를 불러오지 못했습니다') + ': ' + err.message, 'err'); }
+}
+document.getElementById('gBtnExample').addEventListener('click', ev => {
+  const list = (typeof GAME_EXAMPLES !== 'undefined') ? GAME_EXAMPLES : [];
+  if (!list.length) { gLog(PIBO_T('예제가 없습니다'), 'warn'); return; }
+  if (list.length === 1) { gLoadExample(list[0]); return; }
+
+  // 예제가 둘 이상이면 버튼 아래에 선택 메뉴를 띄운다
+  document.querySelectorAll('.g-ex-menu').forEach(n => n.remove());
+  const btn = ev.currentTarget, r = btn.getBoundingClientRect();
+  const menu = document.createElement('div');
+  menu.className = 'g-ex-menu';
+  menu.style.cssText = 'position:fixed;z-index:9999;min-width:180px;padding:4px;' +
+    'background:var(--panel,#fff);border:1px solid var(--line,#D7E3E8);border-radius:8px;' +
+    'box-shadow:0 6px 20px rgba(0,0,0,.14);top:' + (r.bottom + 4) + 'px;left:' + r.left + 'px';
+  list.forEach(ex => {
+    const it = document.createElement('div');
+    it.textContent = PIBO_T(ex.name);
+    it.style.cssText = 'padding:7px 10px;border-radius:5px;font-size:12px;cursor:pointer;color:var(--ink,#12232B)';
+    it.addEventListener('mouseenter', () => it.style.background = 'var(--panel2,#F2F7F9)');
+    it.addEventListener('mouseleave', () => it.style.background = '');
+    it.addEventListener('click', () => { menu.remove(); gLoadExample(ex); });
+    menu.appendChild(it);
+  });
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener('click', function close(e) {
+    if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', close); }
+  }), 0);
+});
 document.getElementById('gFileIn').addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
   const fr = new FileReader();
