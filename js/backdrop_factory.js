@@ -67,19 +67,35 @@
   }
 
   // ── 벨트 표면 (고무 + 가로 리브) ──
-  function texBelt() {
+  // 텍스처 그림은 캔버스에 점을 수천 개 찍어 만들기 때문에 매번 새로 그리면 눈에 띄게 느리다.
+  // 공장마다 한 번만 그려 두고 다시 쓴다.
+  // 캐시하는 것은 '캔버스'다 — 배경을 바꿀 때 backdrop.js 가 텍스처를 해제하므로
+  // THREE.CanvasTexture 는 매번 새로 감싸야 한다 (그건 값이 싸다).
+  const canvasCache = {};
+  function cachedCanvas(key, draw) {
+    if (!canvasCache[key]) canvasCache[key] = draw();
+    return canvasCache[key];
+  }
+
+  // 벨트 색은 공장마다 다르다 (base=바탕, rib=가로 리브, dark=음영)
+  function texBelt(base, rib, dark) {
+    const c = cachedCanvas('belt:' + activeLine, function () {
     const c = document.createElement('canvas');
     c.width = 64; c.height = 256;
     const g = c.getContext('2d');
-    g.fillStyle = '#2E3338'; g.fillRect(0, 0, 64, 256);
+    g.fillStyle = base; g.fillRect(0, 0, 64, 256);
     for (let i = 0; i < 2500; i++) {
-      g.fillStyle = 'rgba(' + (Math.random() < .5 ? '38,42,47' : '58,64,70') + ',.45)';
+      g.globalAlpha = 0.20 + Math.random() * 0.20;
+      g.fillStyle = (Math.random() < .5) ? dark : rib;
       g.fillRect(Math.random() * 64, Math.random() * 256, 2, 2);
+      g.globalAlpha = 1;
     }
     for (let y = 0; y < 256; y += 32) {          // 진행 방향이 보이도록 가로 리브
-      g.fillStyle = '#43494F'; g.fillRect(0, y, 64, 5);
-      g.fillStyle = '#22262A'; g.fillRect(0, y + 5, 64, 2);
+      g.fillStyle = rib; g.fillRect(0, y, 64, 5);
+      g.fillStyle = dark; g.fillRect(0, y + 5, 64, 2);
     }
+    return c;
+    });
     const t = new THREE.CanvasTexture(c);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(1, 8);
@@ -88,18 +104,21 @@
   }
 
   // ── 안전 빗금 (노랑/검정) ──
-  function texHazard() {
+  function texHazard(a, b) {
+    const c = cachedCanvas('haz:' + activeLine, function () {
     const c = document.createElement('canvas');
     c.width = c.height = 128;
     const g = c.getContext('2d');
-    g.fillStyle = '#D9A61C'; g.fillRect(0, 0, 128, 128);
-    g.fillStyle = '#22262A';
+    g.fillStyle = a; g.fillRect(0, 0, 128, 128);
+    g.fillStyle = b;
     for (let i = -128; i < 256; i += 44) {
       g.beginPath();
       g.moveTo(i, 0); g.lineTo(i + 22, 0);
       g.lineTo(i + 22 + 128, 128); g.lineTo(i + 128, 128);
       g.closePath(); g.fill();
     }
+    return c;
+    });
     const t = new THREE.CanvasTexture(c);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(14, 1);
@@ -108,12 +127,15 @@
 
   // ── 판정 구역 표시 ──
   function texZone() {
-    const c = document.createElement('canvas');
-    c.width = c.height = 128;
-    const g = c.getContext('2d');
-    g.strokeStyle = '#00BEDC'; g.lineWidth = 7;
-    g.setLineDash([16, 11]);
-    g.strokeRect(6, 6, 116, 116);
+    const c = cachedCanvas('zone', function () {
+      const c = document.createElement('canvas');
+      c.width = c.height = 128;
+      const g = c.getContext('2d');
+      g.strokeStyle = '#00BEDC'; g.lineWidth = 7;
+      g.setLineDash([16, 11]);
+      g.strokeRect(6, 6, 116, 116);
+      return c;
+    });
     const t = new THREE.CanvasTexture(c);
     t.anisotropy = 8;
     return t;
@@ -281,22 +303,72 @@
     return g;
   }
 
+  // 공장별 무대 꾸밈 — 벨트 색, 상판, 프레임, 소품 성격까지 다르게 한다.
+  //   top       상판 재질 (steel / wood / laminate)
+  //   belt      [바탕, 리브, 음영]
+  //   crateOpen 나무 상자에 물건을 담아 두는지 (아니면 골판지 더미)
+  //   shelfItems 선반에 물건을 진열하는지 (아니면 부품 바구니)
   const LINES = {
-    box:   { label: '박스 공장', make: mkBoxItem,
-             kinds: { good: { label: '양품' }, dent: { label: '찌그러짐' },
-                      label: { label: '라벨 삐뚤' }, fade: { label: '변색' } } },
-    fruit: { label: '과일 공장', make: mkFruitItem,
-             kinds: { apple: { label: '사과' }, orange: { label: '오렌지' },
-                      banana: { label: '바나나' }, grape: { label: '포도' } } },
-    drink: { label: '음료 공장', make: mkDrinkItem,
-             kinds: { can: { label: '캔' }, bottle: { label: '페트병' },
-                      carton: { label: '우유팩' }, cup: { label: '컵' } } },
-    snack: { label: '과자 공장', make: mkSnackItem,
-             kinds: { bag: { label: '봉지 과자' }, stick: { label: '막대 과자' },
-                      donut: { label: '도넛' }, cookie: { label: '쿠키' } } },
-    part:  { label: '부품 공장', make: mkPartItem,
-             kinds: { bolt: { label: '볼트' }, nut: { label: '너트' },
-                      gear: { label: '기어' }, spring: { label: '스프링' } } },
+    box: {
+      label: '박스 공장', make: mkBoxItem,
+      kinds: { good: { label: '양품' }, dent: { label: '찌그러짐' },
+               label: { label: '라벨 삐뚤' }, fade: { label: '변색' } },
+      deco: {
+        top: 'steel', leg: 0x43484D, floor: 0x6E7276, wall: 0x8E9498,
+        belt: ['#2E3338', '#43494F', '#22262A'], rail: 0x9AA1A8, fence: 0xB0B6BC,
+        haz: ['#D9A61C', '#22262A'], deck: 0x9A7B51, crate: 0xB99A6B,
+        rack: 0x5F666C, bins: [0xC4622E, 0x3E7EA8], crateOpen: false, shelfItems: false,
+        light: { key: 0xF2F5F8, hemi: 0x7A8087, sky: ['#AEB6BC', '#848C93'], fog: ['#98A0A6', 1.3, 3.8] },
+      },
+    },
+    fruit: {
+      label: '과일 공장', make: mkFruitItem,
+      kinds: { apple: { label: '사과' }, orange: { label: '오렌지' },
+               banana: { label: '바나나' }, grape: { label: '포도' } },
+      deco: {
+        top: 'wood', leg: 0x6B4A2A, floor: 0xB8A98C, wall: 0xD8CDB4,
+        belt: ['#3D6B44', '#4E8351', '#2C4E33'], rail: 0xCFC3A6, fence: 0xE2D8BE,
+        haz: ['#E0C23C', '#4E7A34'], deck: 0xA8834F, crate: 0xC09A5E,
+        rack: 0x8A6B3E, bins: [0x4E8B3A, 0xE08A2B], crateOpen: true, shelfItems: true,
+        light: { key: 0xFFF6E2, hemi: 0x9A8F76, sky: ['#D9CFB4', '#B6A98A'], fog: ['#C6BA9E', 1.4, 4.0] },
+      },
+    },
+    drink: {
+      label: '음료 공장', make: mkDrinkItem,
+      kinds: { can: { label: '캔' }, bottle: { label: '페트병' },
+               carton: { label: '우유팩' }, cup: { label: '컵' } },
+      deco: {
+        top: 'laminate', leg: 0x33607E, floor: 0x8FA6B4, wall: 0xB6C8D2,
+        belt: ['#24506B', '#33698A', '#1A3C50'], rail: 0xC8D4DC, fence: 0xD2DDE4,
+        haz: ['#5FC8E0', '#1A3C50'], deck: 0x7E8A92, crate: 0xE2E8EC,
+        rack: 0x4E6B7E, bins: [0x3E7EA8, 0xE8EEF2], crateOpen: false, shelfItems: true,
+        light: { key: 0xF2FAFF, hemi: 0x7E8E99, sky: ['#BCCEDA', '#8FA3B2'], fog: ['#A6B8C4', 1.3, 3.8] },
+      },
+    },
+    snack: {
+      label: '과자 공장', make: mkSnackItem,
+      kinds: { bag: { label: '봉지 과자' }, stick: { label: '막대 과자' },
+               donut: { label: '도넛' }, cookie: { label: '쿠키' } },
+      deco: {
+        top: 'laminate', leg: 0x8E5A34, floor: 0xD6BE9E, wall: 0xE8D8C0,
+        belt: ['#6B4326', '#8A5A34', '#4E2F1A'], rail: 0xE0C9A8, fence: 0xEEDCC2,
+        haz: ['#E86A8C', '#6B4326'], deck: 0xB08A56, crate: 0xC98A4B,
+        rack: 0xA8703E, bins: [0xE08A2B, 0xE86A8C], crateOpen: true, shelfItems: true,
+        light: { key: 0xFFF2E0, hemi: 0xA08C74, sky: ['#E0CDB2', '#BFA98C'], fog: ['#CDB99C', 1.4, 4.0] },
+      },
+    },
+    part: {
+      label: '부품 공장', make: mkPartItem,
+      kinds: { bolt: { label: '볼트' }, nut: { label: '너트' },
+               gear: { label: '기어' }, spring: { label: '스프링' } },
+      deco: {
+        top: 'steel', leg: 0x2E3338, floor: 0x5A6066, wall: 0x74797E,
+        belt: ['#1E2226', '#2E3338', '#141719'], rail: 0x7E868D, fence: 0x8A9298,
+        haz: ['#E0801C', '#141719'], deck: 0x5A6066, crate: 0x8A9298,
+        rack: 0x3E444A, bins: [0xC4622E, 0x9AA1A8], crateOpen: false, shelfItems: false,
+        light: { key: 0xE8EEF2, hemi: 0x6A7076, sky: ['#98A0A6', '#70777D'], fog: ['#848C92', 1.2, 3.6] },
+      },
+    },
   };
 
   let activeLine = 'box';
@@ -314,6 +386,27 @@
     return g;
   }
 
+  // 물건만 다시 깔기. 무대(테이블·벨트·소품)는 그대로 두므로 setTheme 이 필요 없다.
+  //   개발툴 = 여러 개가 흐름 / 분류툴 = 한 개를 세워 둠
+  function refillItems() {
+    if (!line) return;
+    items.forEach(function (it) { line.remove(it); });
+    items = [];
+    if (flowing) {
+      // 사진 한 장에 물건 하나만 담겨야 판정이 성립하므로 간격을 넓게 띄운다
+      for (let i = 0; i < FLOW_COUNT; i++) {
+        const it = mkItem(pickKind());
+        it.position.set(slotX(i), 0, 0);
+        items.push(it);
+        line.add(it);
+      }
+    } else {
+      items.push(mkItem(single));
+      line.add(items[0]);
+    }
+    phase = 'stop'; phaseT = 0;
+  }
+
   // 다리 길이는 벨트 높이에 따라 달라지므로 정렬할 때 다시 계산한다
   function align(topY) {
     if (!line) return;
@@ -328,27 +421,31 @@
   function build() {
     const G = new THREE.Group();
     // 작업대와 같은 뼈대 (스틸 상판 · 짙은 프레임)
-    const T = buildTable(G, 1.60, 0.86, 0.78, texSteel(), 0x43484D, 0x6E7276, 0x8E9498);
+    const D = LINES[activeLine].deco;
+    const T = buildTable(G, 1.60, 0.86, 0.78,
+      D.top === 'wood' ? texWoodTop(146, 112, 74, 30)
+        : D.top === 'laminate' ? texLaminate() : texSteel(),
+      D.leg, D.floor, D.wall);
 
     // ── 작업대 하부 (공장 작업대처럼) ──
-    const H = 0.78, TOPT = 0.038, W = 1.60 * STAGE_SCALE, D = 0.86 * STAGE_SCALE;
+    const H = 0.78, W = 1.60 * STAGE_SCALE, TD = 0.86 * STAGE_SCALE;   // TD = 상판 깊이
     const barMat = new THREE.MeshPhongMaterial({ color: 0x3A4045, shininess: 18 });
 
     // 다리를 잇는 보강 바 (앞뒤 · 좌우)
     [-1, 1].forEach(function (sz) {
       const b = new THREE.Mesh(new THREE.BoxGeometry(W - 0.20, 0.026, 0.026), barMat);
-      b.position.set(0, -H + 0.16, sz * (D / 2 - 0.07));
+      b.position.set(0, -H + 0.16, sz * (TD / 2 - 0.07));
       T.add(b);
     });
     [-1, 1].forEach(function (sx) {
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.026, D - 0.20), barMat);
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.026, TD - 0.20), barMat);
       b.position.set(sx * (W / 2 - 0.07), -H + 0.16, 0);
       T.add(b);
     });
 
     // 하부 선반 + 자재 상자
     const shelf = new THREE.Mesh(
-      new THREE.BoxGeometry(W - 0.20, 0.018, D - 0.22),
+      new THREE.BoxGeometry(W - 0.20, 0.018, TD - 0.22),
       new THREE.MeshPhongMaterial({ color: 0x6E757B, shininess: 10 })
     );
     shelf.position.y = -H + 0.19;
@@ -370,7 +467,8 @@
     [-1, 1].forEach(function (s) {
       const hz = new THREE.Mesh(
         new THREE.PlaneGeometry(1.34, 0.032),
-        new THREE.MeshPhongMaterial({ map: texHazard(), shininess: 2 })
+        new THREE.MeshPhongMaterial({
+          map: texHazard(D.haz[0], D.haz[1]), shininess: 2 })
       );
       hz.rotation.x = -Math.PI / 2;
       hz.position.set(0, 0.0012, BELT_Z * STAGE_SCALE + s * HAZ_GAP);
@@ -384,7 +482,8 @@
     line.position.set(0, BELT_TOP, BELT_Z);
     legs = [];
 
-    beltMat = new THREE.MeshPhongMaterial({ map: texBelt(), shininess: 12 });
+    beltMat = new THREE.MeshPhongMaterial({
+      map: texBelt(D.belt[0], D.belt[1], D.belt[2]), shininess: 12 });
     const belt = new THREE.Mesh(new THREE.BoxGeometry(BELT_L, 0.026, BELT_W), beltMat);
     belt.position.y = -0.013;
     belt.receiveShadow = true;
@@ -393,7 +492,7 @@
     [-1, 1].forEach(function (s) {          // 가드레일
       const rail = new THREE.Mesh(
         new THREE.BoxGeometry(BELT_L, 0.024, 0.008),
-        new THREE.MeshPhongMaterial({ color: 0x9AA1A8, shininess: 30 })
+        M(D.rail, 30)
       );
       rail.position.set(0, 0.005, s * (BELT_W / 2 + 0.004));
       rail.castShadow = true;
@@ -403,7 +502,7 @@
     [-1, 1].forEach(function (s) {          // 양끝 롤러
       const r = new THREE.Mesh(
         new THREE.CylinderGeometry(0.019, 0.019, BELT_W, 20),
-        new THREE.MeshPhongMaterial({ color: 0xA8AEB4, shininess: 40 })
+        M(D.rail, 40)
       );
       r.rotation.x = Math.PI / 2;
       r.position.set(s * BELT_L / 2, -0.013, 0);
@@ -423,28 +522,14 @@
     // 판정 구역 (파이보 정면)
     const zone = new THREE.Mesh(
       new THREE.PlaneGeometry(0.17, 0.17),
-      new THREE.MeshBasicMaterial({ map: texZone(), transparent: true, depthWrite: false })
+      new THREE.MeshBasicMaterial({
+        map: texZone(), transparent: true, depthWrite: false })
     );
     zone.rotation.x = -Math.PI / 2;
     zone.position.y = 0.0016;
     line.add(zone);
 
-    // 흘러가는 물건 — 개발툴은 여러 개가 흐르고, 분류툴은 한 개를 세워 둔다
-    items = [];
-    if (flowing) {
-      // 사진 한 장에 물건 하나만 담겨야 판정이 성립하므로 간격을 넓게 띄운다
-      for (let i = 0; i < FLOW_COUNT; i++) {
-        const it = mkItem(pickKind());
-        it.position.set(slotX(i), 0, 0);
-        items.push(it);
-        line.add(it);
-      }
-      phase = 'stop'; phaseT = 0;
-    } else {
-      const it = mkItem(single);
-      items.push(it);
-      line.add(it);
-    }
+    refillItems();
 
     line.userData.prop = true;
     T.add(line);
@@ -454,7 +539,7 @@
     ctl.position.set(-0.60, 0, BELT_Z - 0.13);
     const cab = new THREE.Mesh(
       new THREE.BoxGeometry(0.15, 0.11, 0.08),
-      new THREE.MeshPhongMaterial({ color: 0x8A9096, shininess: 25 })
+      M(D.rack, 25)
     );
     cab.position.y = 0.055; cab.castShadow = true;
     ctl.add(cab);
@@ -504,72 +589,85 @@
     T.add(twr);
 
     // ── 배경 소품 (벨트 건너편) ──
-    // 파이보 시야에 늘 함께 찍히므로 양품·불량 모두 같은 배경이 되어 학습에 방해가 되지 않는다.
+    // 공장마다 다르게 꾸민다. 파이보 시야에 늘 함께 찍히지만
+    // 한 공장 안에서는 어느 물건이든 배경이 같으므로 학습에는 방해가 되지 않는다.
     const far = BELT_Z + 0.26;
 
-    // 안전 펜스 — 가로 바 2단 + 기둥
+    // 안전 펜스 — 공장 색의 가로 바 2단
     const fence = new THREE.Group();
     fence.position.set(0, 0, far);
-    const steel = new THREE.MeshPhongMaterial({ color: 0xB0B6BC, shininess: 40 });
+    const fm = M(D.fence, 40);
     [0.055, 0.105].forEach(function (y) {
-      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 1.30, 10), steel);
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 1.30, 10), fm);
       bar.rotation.z = Math.PI / 2;
       bar.position.y = y;
       fence.add(bar);
     });
     [-0.62, -0.21, 0.21, 0.62].forEach(function (x) {
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.125, 10), steel);
-      post.position.set(x, 0.0625, 0);
-      post.castShadow = true;
-      fence.add(post);
+      put(fence, new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.125, 10), fm), x, 0.0625);
     });
     fence.userData.prop = true;
     T.add(fence);
 
-    // 팔레트 + 적재 상자 (좌측 안쪽)
+    // 좌측 — 적재대. 상자 위에 그 공장 물건을 몇 개 얹어 둔다.
     const pal = new THREE.Group();
     pal.position.set(-0.44, 0, far - 0.11);
-    const wood = new THREE.MeshPhongMaterial({ color: 0x9A7B51, shininess: 4 });
-    const deck = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.014, 0.16), wood);
-    deck.position.y = 0.007; deck.receiveShadow = true;
-    pal.add(deck);
-    [[-0.06, 0.05, 0.055], [0.05, 0.05, 0.10], [-0.01, 0.10, 0.045]].forEach(function (b) {
-      const box = new THREE.Mesh(
-        new THREE.BoxGeometry(0.075, 0.058, 0.075),
-        new THREE.MeshPhongMaterial({ color: 0xB99A6B, shininess: 6 })
-      );
-      box.position.set(b[0], 0.014 + b[1] - 0.021, b[2] - 0.06);
-      box.rotation.y = (b[0] + b[2]) * 2.4;
-      box.castShadow = true;
-      pal.add(box);
-    });
+    put(pal, new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.014, 0.17), M(D.deck, 4)), 0, 0.007);
+    if (D.crateOpen) {
+      // 나무 상자(과일·과자) — 옆판만 두르고 안에 물건을 담는다
+      const cw = 0.19, cd = 0.15, ch = 0.05;
+      [[0, 0, -cd / 2], [0, 0, cd / 2]].forEach(function (p) {
+        put(pal, new THREE.Mesh(new THREE.BoxGeometry(cw, ch, 0.006), M(D.crate, 5)), p[0], 0.014 + ch / 2, p[2]);
+      });
+      [[-cw / 2, 0, 0], [cw / 2, 0, 0]].forEach(function (p) {
+        put(pal, new THREE.Mesh(new THREE.BoxGeometry(0.006, ch, cd), M(D.crate, 5)), p[0], 0.014 + ch / 2, p[2]);
+      });
+      const ks = Object.keys(LINES[activeLine].kinds);
+      [[-0.05, -0.03], [0.02, 0.02], [0.055, -0.035], [-0.02, 0.035]].forEach(function (p, i) {
+        const it = LINES[activeLine].make(ks[i % ks.length]);
+        it.position.set(p[0], 0.020, p[1]);
+        it.rotation.y = i * 1.3;
+        it.scale.setScalar(0.8);
+        pal.add(it);
+      });
+    } else {
+      // 골판지 상자 더미(박스·음료·부품)
+      [[-0.06, 0.05, 0.055], [0.05, 0.05, 0.10], [-0.01, 0.10, 0.045]].forEach(function (b) {
+        const box = put(pal, new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.058, 0.075), M(D.crate, 6)),
+          b[0], 0.014 + b[1] - 0.021, b[2] - 0.06);
+        box.rotation.y = (b[0] + b[2]) * 2.4;
+      });
+    }
     pal.userData.prop = true;
     T.add(pal);
 
-    // 부품 랙 (우측 안쪽) — 선반 2단에 부품 상자
+    // 우측 — 선반. 공장에 따라 진열대(음료·과자) 또는 부품 랙이 된다.
     const rack = new THREE.Group();
     rack.position.set(0.46, 0, far - 0.10);
-    const frame = new THREE.MeshPhongMaterial({ color: 0x5F666C, shininess: 20 });
+    const frame = M(D.rack, 20);
     [-0.11, 0.11].forEach(function (x) {
       [-0.06, 0.06].forEach(function (z) {
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.009, 0.16, 0.009), frame);
-        leg.position.set(x, 0.08, z);
-        rack.add(leg);
+        put(rack, new THREE.Mesh(new THREE.BoxGeometry(0.009, 0.16, 0.009), frame), x, 0.08, z);
       });
     });
     [0.055, 0.13].forEach(function (y, k) {
-      const sh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.007, 0.14), frame);
-      sh.position.y = y; sh.receiveShadow = true;
-      rack.add(sh);
+      const sh = put(rack, new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.007, 0.14), frame), 0, y);
+      sh.receiveShadow = true;
+      const ks = Object.keys(LINES[activeLine].kinds);
       [-0.07, 0.0, 0.07].forEach(function (x, j) {
-        const bin = new THREE.Mesh(
-          new THREE.BoxGeometry(0.058, 0.036, 0.10),
-          new THREE.MeshPhongMaterial({ color: k ? 0x3E7EA8 : 0xC4622E, shininess: 12 })
-        );
-        bin.position.set(x, y + 0.021, 0);
-        bin.castShadow = true;
-        if ((j + k) % 3 === 0) bin.visible = false;   // 빈 칸도 섞어 둔다
-        rack.add(bin);
+        if (D.shelfItems) {
+          // 진열대 — 선반 위에 물건을 세워 둔다
+          if ((j + k) % 4 === 3) return;
+          const it = LINES[activeLine].make(ks[(j + k * 2) % ks.length]);
+          it.position.set(x, y + 0.004, 0);
+          it.rotation.y = (j + k) * 0.9;
+          it.scale.setScalar(0.72);
+          rack.add(it);
+        } else {
+          const bin = put(rack, new THREE.Mesh(new THREE.BoxGeometry(0.058, 0.036, 0.10),
+            M(D.bins[(j + k) % D.bins.length], 12)), x, y + 0.021);
+          if ((j + k) % 3 === 0) bin.visible = false;   // 빈 칸도 섞어 둔다
+        }
       });
     });
     rack.userData.prop = true;
@@ -579,9 +677,8 @@
     aligned = false;
 
     G.userData.light = {
-      key: 0xF2F5F8, keyI: 0.62, amb: 0.34, hemi: 0.22, hemiG: 0x7A8087,
-      sky: ['#AEB6BC', '#848C93'], keyPos: [0.9, 1.6, 1.0],
-      fog: ['#98A0A6', 1.3, 3.8],
+      key: D.light.key, keyI: 0.62, amb: 0.34, hemi: 0.22, hemiG: D.light.hemi,
+      sky: D.light.sky, keyPos: [0.9, 1.6, 1.0], fog: D.light.fog,
     };
     G.userData.factory = true;
     return G;
@@ -803,21 +900,20 @@
   // ── 외부 API ──
   // 분류툴: FactoryLine.stage('good')  → 벨트 정지, 그 물건 하나만 정면에
   // 개발툴: FactoryLine.flow()         → 여러 물건이 흘러감 (기본)
-  function rebuild() {
-    if (typeof setTheme === 'function' && themeGroup && themeGroup.userData.factory) {
-      setTheme('factory_' + activeLine);
-    }
-  }
   window.FactoryLine = {
     // 공장 목록·전환
     lines: function () {
       return Object.keys(LINES).map(function (k) { return { key: k, label: LINES[k].label }; });
     },
+    // 공장이 바뀔 때만 무대를 다시 만든다 (색·소품이 달라지므로 이때는 불가피하다).
+    // 다만 지금 배경이 공장이 아니면(예: 분류툴 첫 진입) 같은 공장이어도 만들어야 한다.
     line: function (k) {
       if (k == null) return activeLine;
       if (!LINES[k]) return activeLine;
+      const onFactory = !!(typeof themeGroup !== 'undefined' && themeGroup && themeGroup.userData.factory);
+      if (k === activeLine && onFactory) return activeLine;
+      if (k !== activeLine) single = Object.keys(LINES[k].kinds)[0];
       activeLine = k;
-      single = Object.keys(LINES[k].kinds)[0];
       if (typeof setTheme === 'function') setTheme('factory_' + k);
       return activeLine;
     },
@@ -830,12 +926,13 @@
     count: function (v) { if (v == null) return FLOW_COUNT; setCount(v); refresh(); return FLOW_COUNT; },
     stopTime: function (v) { if (v == null) return STOP_T; setStopT(Number(v)); refresh(); return STOP_T; },
     moveTime: function (v) { if (v == null) return MOVE_T; setMoveT(Number(v)); refresh(); return MOVE_T; },
+    // 물건만 바뀌므로 무대는 그대로 두고 물건만 갈아 끼운다 (씬을 다시 만들면 눈에 띄게 느리다)
     stage: function (kind) {
       single = KINDSOF()[kind] ? kind : Object.keys(KINDSOF())[0];
       flowing = false;
-      rebuild();
+      refillItems();
     },
-    flow: function () { flowing = true; rebuild(); },
+    flow: function () { flowing = true; refillItems(); },
     // 촬영 변화 — 자동 흔들기 on/off 와 기준 위치·크기
     vary: function (on) { if (on == null) return vary; vary = !!on; return vary; },
     pose: function (k, v) {

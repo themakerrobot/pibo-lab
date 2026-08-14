@@ -20,7 +20,7 @@
   let classes = [];            // [{ name, feats: [tensor], thumbs: [dataURL] }]
   let selected = -1;
   let stream = null, capturing = false, capTimer = null;
-  let source = 'webcam';        // 'webcam' 또는 'pibo'(3D 파이보 시야)
+  let source = 'webcam';        // 'webcam' 또는 'pibo'(3D 파이보 뷰)
   let waitTimer = null;
   let inferring = false, inferTimer = null;
   let lastAcc = 0;
@@ -196,7 +196,7 @@
   }
 
   // ── 샘플 수집 ──
-  // src 는 웹캠 <video> 이거나 파이보 시야 캔버스다. 둘 다 fromPixels 로 읽을 수 있다.
+  // src 는 웹캠 <video> 이거나 파이보 뷰 캔버스다. 둘 다 fromPixels 로 읽을 수 있다.
   function feature(src) {
     return tf.tidy(() => {
       const img = tf.browser.fromPixels(src)
@@ -454,6 +454,51 @@
     $('mdlExport').disabled = !model;
   }
 
+  // ── 3D 지연 로드 ──
+  // 파이보 뷰를 고르기 전에는 three.js·로봇 모델을 받지 않는다.
+  // 웹캠만 쓰는 학생은 이 비용이 0 이 된다.
+  const SIM_FILES = [
+    'lib/three.min.js', 'js/config.js', 'js/dom.js', 'js/orbit.js', 'js/loaders.js',
+    'js/viewer.js', 'js/physics.js', 'js/backdrop.js', 'js/backdrop_factory.js',
+    'js/motion.js', 'js/pibo_api.js', 'js/custom_style.js', 'js/pibo_oled.js',
+    'js/pibo_camera.js', 'js/motion_names.js',
+  ];
+  const SIM_V = '?v=16';
+  let simReady = null;
+
+  function loadOne(src) {
+    return new Promise(function (res, rej) {
+      const el = document.createElement('script');
+      el.src = src;
+      el.async = false;           // 순서를 지켜야 한다 (뒤 파일이 앞 파일의 함수를 쓴다)
+      el.onload = res;
+      el.onerror = function () { rej(new Error(src)); };
+      document.head.appendChild(el);
+    });
+  }
+
+  function loadSim() {
+    if (simReady) return simReady;
+    simReady = (async function () {
+      for (let i = 0; i < SIM_FILES.length; i++) {
+        progress(T('3D 준비 중'), (i + 1) + '/' + SIM_FILES.length, (i + 1) / SIM_FILES.length);
+        await loadOne(SIM_FILES[i] + SIM_V);
+      }
+      // 각 파일이 DOMContentLoaded 에 맞춰 붙여 둔 초기화가 이미 지나갔으므로 직접 알린다
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+      progress(T('3D 준비 완료'), '', 1);
+      fillLines();
+      fillItems();
+      refreshVary();
+    })().catch(function (e) {
+      simReady = null;
+      progress(T('3D 를 불러오지 못했습니다'), '', 0);
+      console.error(e);
+      throw e;
+    });
+    return simReady;
+  }
+
   // ── 소스 전환 ──
   // 파이보가 보는 화면을 미리보기에 계속 그린다 (샘플로 찍히는 것과 같은 그림)
   let povTimer = null;
@@ -464,9 +509,17 @@
     cv.getContext('2d').drawImage(src, 0, 0, 640, 480);
   }
 
-  function applySource() {
+  async function applySource() {
     const web = (source === 'webcam');
-    if (!web) { stopInfer(); stopCam(); }      // 화면 표시를 정하기 전에 웹캠을 먼저 끈다
+    if (!web) {
+      stopInfer(); stopCam();                  // 화면 표시를 정하기 전에 웹캠을 먼저 끈다
+      $('vp').style.display = 'block';
+      $('povView').style.display = 'block';
+      $('camVid').style.display = 'none';
+      $('camOff').style.display = 'none';
+      $('webRow').style.display = 'none';
+      try { await loadSim(); } catch (e) { return; }
+    }
     $('webRow').style.display = web ? '' : 'none';
     $('piboRow').style.display = web ? 'none' : '';
     $('camVid').style.display = web ? '' : 'none';
@@ -494,7 +547,7 @@
     try { localStorage.setItem('piboLab.camSource', source); } catch (e) { /* 무시 */ }
     refreshUI(); steps();
 
-    // 파이보 시야는 로봇·무대가 다 뜬 뒤에야 찍을 수 있다. 준비될 때까지 확인한다.
+    // 파이보 뷰는 로봇·무대가 다 뜬 뒤에야 찍을 수 있다. 준비될 때까지 확인한다.
     clearInterval(waitTimer);
     if (!web) {
       waitTimer = setInterval(function () {
@@ -573,7 +626,12 @@
   }
 
   // ── 연결 ──
+  // 3D 파일들이 각자 DOMContentLoaded 에 초기화를 걸어 두는데, 늦게 불러오면 그 이벤트가 이미 지났다.
+  // 그래서 로드 후 직접 한 번 쏘는데, 그러면 이 초기화도 다시 불린다. 한 번만 돌게 막는다.
+  let inited = false;
   document.addEventListener('DOMContentLoaded', function () {
+    if (inited) return;
+    inited = true;
     $('clsAdd').addEventListener('click', addClass);
     $('clsName').addEventListener('keydown', e => { if (e.key === 'Enter') addClass(); });
 

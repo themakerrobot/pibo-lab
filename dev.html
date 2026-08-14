@@ -231,7 +231,7 @@ document.getElementById('btnSave').addEventListener('click', () => {
   a.download = name;
   a.click();
   URL.revokeObjectURL(a.href);
-  devLog('저장: ' + name);
+  devLog(PIBO_T('저장') + ': ' + name);
 });
 document.getElementById('btnLoad').addEventListener('click', () => document.getElementById('fileIn').click());
 document.getElementById('fileIn').addEventListener('change', e => {
@@ -245,8 +245,8 @@ document.getElementById('fileIn').addEventListener('change', e => {
       } else {
         Blockly.serialization.workspaces.load(JSON.parse(txt), devWorkspace);
       }
-      devLog('불러오기 완료: ' + f.name);
-    } catch (err) { devLog('불러오기 실패: ' + err.message, 'err'); }
+      devLog(PIBO_T('불러오기 완료') + ': ' + f.name);
+    } catch (err) { devLog(PIBO_T('불러오기 실패') + ': ' + err.message, 'err'); }
   };
   fr.readAsText(f);
   e.target.value = '';
@@ -261,7 +261,7 @@ document.getElementById('btnReset').addEventListener('click', () => {
   for (const jn in sliderEls) { sliderEls[jn].value = 0; setJointValue(jn, 0); }
   Oled.reset();
   if (typeof PHYS !== 'undefined' && PHYS.on) PHYS.reset();
-  devLog('로봇 초기화');
+  devLog(PIBO_T('로봇 초기화'));
 });
 
 // ── 확대 / 축소 / 맞추기 ──
@@ -309,10 +309,10 @@ function restoreBlocks() {
   try {
     Blockly.serialization.workspaces.load(JSON.parse(raw), devWorkspace);
     const n = devWorkspace.getAllBlocks(false).length;
-    devLog('이전에 하던 작업을 불러왔습니다 (블록 ' + n + '개). 새로 시작하려면 [블록 지우기]');
+    devLog(PIBO_T('이전에 하던 작업을 불러왔습니다') + ' (' + n + ') — ' + PIBO_T('새로 시작하려면 [블록 지우기]'));
     return true;
   } catch (e) {
-    devLog('이전 작업을 복원하지 못했습니다: ' + e.message, 'warn');
+    devLog(PIBO_T('이전 작업을 복원하지 못했습니다') + ': ' + e.message, 'warn');
     try { sessionStorage.removeItem(AUTOSAVE_KEY); } catch (e2) {}
     return false;
   } finally {
@@ -328,7 +328,7 @@ document.getElementById('btnClear').addEventListener('click', () => {
   devStop();
   devWorkspace.clear();
   try { sessionStorage.removeItem(AUTOSAVE_KEY); } catch (e) {}
-  devLog('블록을 모두 지웠습니다');
+  devLog(PIBO_T('블록을 모두 지웠습니다'));
 });
 
 const restored = restoreBlocks();

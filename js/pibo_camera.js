@@ -54,13 +54,13 @@ const PiboCam = (function () {
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:5px;margin-top:5px;width:192px';
 
-    // 소스 선택 — 웹캠 / 파이보 시야.
+    // 소스 선택 — 웹캠 / 파이보 뷰.
     // 학습(분류툴)과 추론(개발툴)이 같은 소스여야 하므로 눈에 띄게 위에 둔다.
     src = document.createElement('select');
     src.style.cssText = 'width:192px;margin-top:5px;border:1px solid var(--line,#DDE6EA);' +
       'background:var(--panel2,#F2F7F9);border-radius:5px;font-family:inherit;font-size:10px;' +
       'padding:3px 4px;color:var(--ink,#12232B);cursor:pointer';
-    [['webcam', PIBO_T('웹캠')], ['pibo', PIBO_T('파이보 시야')]].forEach(function (p) {
+    [['webcam', PIBO_T('웹캠')], ['pibo', PIBO_T('파이보 뷰')]].forEach(function (p) {
       const o = document.createElement('option');
       o.value = p[0]; o.textContent = PIBO_T('소스') + ': ' + p[1];
       src.appendChild(o);
@@ -94,7 +94,7 @@ const PiboCam = (function () {
     placeholder();
   }
 
-  // 파이보 시야일 때는 웹캠 조작 UI 가 필요 없다
+  // 파이보 뷰일 때는 웹캠 조작 UI 가 필요 없다
   function applySource() {
     if (!panel) return;
     const web = (source === 'webcam');
@@ -122,7 +122,7 @@ const PiboCam = (function () {
     viewG.fillStyle = '#56646C';
     viewG.font = 'bold 30px sans-serif';
     viewG.textAlign = 'center'; viewG.textBaseline = 'middle';
-    viewG.fillText(source === 'pibo' ? PIBO_T('파이보 시야')
+    viewG.fillText(source === 'pibo' ? PIBO_T('파이보 뷰')
       : (ready ? PIBO_T('사진 대기 중') : PIBO_T('카메라 꺼짐')), W / 2, H / 2);
     viewG.textAlign = 'left'; viewG.textBaseline = 'alphabetic';
   }
@@ -206,7 +206,7 @@ const PiboCam = (function () {
       const shot = PiboView.grab();
       const id = make();
       if (shot) get(id).getContext('2d').drawImage(shot, 0, 0, W, H);
-      else log(PIBO_T('파이보 시야를 만들지 못했습니다'), 'err');
+      else log(PIBO_T('파이보 뷰를 만들지 못했습니다'), 'err');
       return id;
     }
     if (!ready && !(await start())) return make();   // 실패해도 빈 이미지를 준다 (프로그램은 계속)

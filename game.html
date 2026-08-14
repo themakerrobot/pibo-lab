@@ -215,7 +215,7 @@ document.getElementById('gBtnSave').addEventListener('click', () => {
   a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
   a.download = 'pibo_game.json';
   a.click(); URL.revokeObjectURL(a.href);
-  gLog('저장: pibo_game.json');
+  gLog(PIBO_T('저장') + ': pibo_game.json');
 });
 document.getElementById('gBtnLoad').addEventListener('click', () => document.getElementById('gFileIn').click());
 
@@ -265,8 +265,8 @@ document.getElementById('gFileIn').addEventListener('change', e => {
   fr.onload = ev => {
     try {
       Blockly.serialization.workspaces.load(JSON.parse(ev.target.result), gameWorkspace);
-      gLog('불러오기 완료: ' + f.name);
-    } catch (err) { gLog('불러오기 실패: ' + err.message, 'err'); }
+      gLog(PIBO_T('불러오기 완료') + ': ' + f.name);
+    } catch (err) { gLog(PIBO_T('불러오기 실패') + ': ' + err.message, 'err'); }
   };
   fr.readAsText(f); e.target.value = '';
 });
@@ -277,7 +277,7 @@ document.getElementById('gBtnClear').addEventListener('click', () => {
   if (gameWorkspace.getAllBlocks(false).length && !confirm('작업 중인 블록을 모두 지울까요?')) return;
   gameStop(); gameWorkspace.clear();
   try { sessionStorage.removeItem(GAME_SAVE_KEY); } catch (e) {}
-  gLog('블록을 모두 지웠습니다');
+  gLog(PIBO_T('블록을 모두 지웠습니다'));
 });
 
 // 확대 / 축소 / 테마
@@ -311,7 +311,7 @@ function gAutosave() {
   gRestoring = true;
   try {
     Blockly.serialization.workspaces.load(JSON.parse(raw), gameWorkspace);
-    gLog('이전에 만들던 게임을 불러왔습니다. 새로 시작하려면 [블록 지우기]');
+    gLog(PIBO_T('이전에 만들던 게임을 불러왔습니다. 새로 시작하려면 [블록 지우기]'));
   } catch (e) { try { sessionStorage.removeItem(GAME_SAVE_KEY); } catch (e2) {} }
   finally {
     gRestoring = false;
@@ -322,7 +322,7 @@ function gAutosave() {
 })();
 gameWorkspace.addChangeListener(ev => { if (!ev.isUiEvent) gAutosave(); });
 
-gLog('준비 완료 — 블록을 조립하고 ▶ 실행을 누르세요');
+gLog(PIBO_T('준비 완료 — 블록을 조립하고 ▶ 실행을 누르세요'));
 </script>
 
 <script type="module">

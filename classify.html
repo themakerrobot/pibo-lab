@@ -200,7 +200,7 @@
       <div class="row" style="margin-bottom:8px">
         <select class="inp" id="srcSel" style="cursor:pointer">
           <option value="webcam">소스: 웹캠</option>
-          <option value="pibo">소스: 파이보 시야 (공장 라인)</option>
+          <option value="pibo">소스: 파이보 뷰</option>
         </select>
       </div>
       <div class="row" id="webRow" style="margin-bottom:10px">
@@ -317,28 +317,13 @@
   <span id="tlTimeDisp"></span><span id="tlPlayPause"></span>
   <button id="physBtn"></button><button id="gridBtn"></button>
 </div>
-
-<script src="lib/three.min.js?v=16"></script>
 <script src="lib/jszip.min.js?v=16"></script>
 <script src="lib/tf.min.js?v=16"></script>
 <script src="js/i18n.js?v=16"></script>
 
-<!-- 시뮬레이터 (개발툴과 완전히 같은 파일) -->
-<script src="js/config.js?v=16"></script>
-<script src="js/dom.js?v=16"></script>
-<script src="js/orbit.js?v=16"></script>
-<script src="js/loaders.js?v=16"></script>
-<script src="js/viewer.js?v=16"></script>
-<script src="js/physics.js?v=16"></script>
-<script src="js/backdrop.js?v=16"></script>
-<script src="js/backdrop_factory.js?v=16"></script>
-<script src="js/motion.js?v=16"></script>
-<script src="js/pibo_api.js?v=16"></script>
-<script src="js/custom_style.js?v=16"></script>
-<script src="js/pibo_oled.js?v=16"></script>
-<script src="js/motion_names.js?v=16"></script>
+<!-- 3D(파이보 뷰)는 필요할 때만 불러온다 — js/classify.js 의 loadSim() 참고.
+     웹캠으로만 쓰는 학생은 three.js·로봇 모델을 아예 받지 않는다. -->
 <script src="js/cf_store.js?v=16"></script>
-<script src="js/pibo_camera.js?v=16"></script>
 <script src="js/classify.js?v=16"></script>
 </body>
 </html>
