@@ -9,16 +9,17 @@
 <meta property="og:description" content="브라우저에서 PIBO를 조작하고 모션을 만들어 실물 로봇으로 내보내기">
 <meta property="og:image" content="img/og.png">
 <link rel="icon" type="image/png" href="img/favicon.png">
-<link rel="stylesheet" href="fonts/pretendard.css?v=15">
-<link rel="stylesheet" href="css/all.min.css?v=15">
-<script src="lib/three.min.js?v=15"></script>
-<link rel="stylesheet" href="css/style.css?v=15">
+<link rel="stylesheet" href="fonts/pretendard.css?v=16">
+<link rel="stylesheet" href="css/all.min.css?v=16">
+<script src="lib/three.min.js?v=16"></script>
+<link rel="stylesheet" href="css/style.css?v=16">
 </head>
 <body>
 <header>
   <h1><img src="img/pibo-logo.png" alt="PIBO">파이보 랩</h1>
   <span class="navlink on">체험툴</span>
   <a class="navlink" href="dev.html">개발툴</a>
+  <a class="navlink" href="classify.html">분류툴</a>
   <a class="navlink" href="game.html">게임툴</a>
   <span class="badge" id="statusBadge">준비</span>
   <span style="flex:1"></span>
@@ -28,7 +29,7 @@
   <div class="left">
     <div class="sec">
       <div class="sec-title">뷰</div>
-      <select class="tl-select" id="themeSel" style="width:100%;margin-bottom:6px"><option value="desk">배경: 책상</option><option value="dining">배경: 식탁</option><option value="bench">배경: 작업대</option><option value="road">배경: 주행 매트</option><option value="sumo">배경: 스모 링</option><option value="soccer">배경: 축구장</option><option value="space">배경: 우주 기지</option><option value="kitchen">배경: 주방 조리대</option><option value="plain">배경: 심플</option></select>
+      <select class="tl-select" id="themeSel" style="width:100%;margin-bottom:6px"><option value="desk">배경: 책상</option><option value="dining">배경: 식탁</option><option value="bench">배경: 작업대</option><option value="road">배경: 주행 매트</option><option value="sumo">배경: 스모 링</option><option value="soccer">배경: 축구장</option><option value="kitchen">배경: 주방 조리대</option></select>
       <button class="tb on" id="gridBtn"><i class="ic fa-solid fa-border-all"></i>그리드</button>
       <button class="tb" id="ssBtn"><i class="ic fa-solid fa-camera"></i>스크린샷</button>
     </div>
@@ -146,19 +147,20 @@
   </div>
 </div>
 
-<script src="js/i18n.js?v=15"></script>
-<script src="js/config.js?v=15"></script>
-<script src="js/dom.js?v=15"></script>
-<script src="js/orbit.js?v=15"></script>
-<script src="js/loaders.js?v=15"></script>
-<script src="js/viewer.js?v=15"></script>
-<script src="js/physics.js?v=15"></script>
-<script src="js/backdrop.js?v=15"></script>
-<script src="js/motion.js?v=15"></script>
-<script src="js/pibo_api.js?v=15"></script>
-<script src="js/custom_style.js?v=15"></script>
-<script src="js/motion_names.js?v=15"></script>
-<script src="js/appview.js?v=15"></script>
+<script src="js/i18n.js?v=16"></script>
+<script src="js/config.js?v=16"></script>
+<script src="js/dom.js?v=16"></script>
+<script src="js/orbit.js?v=16"></script>
+<script src="js/loaders.js?v=16"></script>
+<script src="js/viewer.js?v=16"></script>
+<script src="js/physics.js?v=16"></script>
+<script src="js/backdrop.js?v=16"></script>
+<script src="js/backdrop_factory.js?v=16"></script>
+<script src="js/motion.js?v=16"></script>
+<script src="js/pibo_api.js?v=16"></script>
+<script src="js/custom_style.js?v=16"></script>
+<script src="js/motion_names.js?v=16"></script>
+<script src="js/appview.js?v=16"></script>
 
 <script type="module">
   // Rapier3D — lib/rapier.es.js 를 먼저 쓰고, 없을 때만 CDN

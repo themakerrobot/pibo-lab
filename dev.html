@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>파이보 랩 — 개발툴</title>
-<link rel="stylesheet" href="css/all.min.css?v=15">
+<link rel="stylesheet" href="css/all.min.css?v=16">
 <link rel="icon" type="image/png" href="img/favicon.png">
-<link rel="stylesheet" href="fonts/pretendard.css?v=15">
-<link rel="stylesheet" href="css/style.css?v=15">
+<link rel="stylesheet" href="fonts/pretendard.css?v=16">
+<link rel="stylesheet" href="css/style.css?v=16">
 <style>
   html,body{height:100%;margin:0;overflow:hidden}
   #devTop{height:54px;display:flex;align-items:center;gap:8px;padding:0 14px;
@@ -64,6 +64,7 @@
   <span class="title"><img src="img/pibo-logo.png" alt="" style="height:30px">파이보 랩</span>
   <a class="navlink" href="index.html">체험툴</a>
   <span class="navlink on">개발툴</span>
+  <a class="navlink" href="classify.html">분류툴</a>
   <a class="navlink" href="game.html">게임툴</a>
   <span style="width:1px;height:20px;background:var(--line-soft,#E7EEF1)"></span>
   <button class="db run" id="btnRun"><i class="fa-solid fa-play"></i> 실행</button>
@@ -100,9 +101,7 @@
           <option value="road">주행 매트</option>
           <option value="sumo">스모 링</option>
           <option value="soccer">축구장</option>
-          <option value="space">우주 기지</option>
           <option value="kitchen">주방 조리대</option>
-          <option value="plain">심플</option>
         </select>
         <button class="zb" id="zoomIn"  title="확대">＋</button>
         <button class="zb" id="zoomOut" title="축소">－</button>
@@ -131,22 +130,25 @@
   <button id="physBtn"></button><button id="gridBtn"></button>
 </div>
 
-<script src="lib/three.min.js?v=15"></script>
+<script src="lib/three.min.js?v=16"></script>
 
 <!-- 시뮬레이터 (체험툴과 완전히 같은 파일) -->
-<script src="js/i18n.js?v=15"></script>
-<script src="js/config.js?v=15"></script>
-<script src="js/dom.js?v=15"></script>
-<script src="js/orbit.js?v=15"></script>
-<script src="js/loaders.js?v=15"></script>
-<script src="js/viewer.js?v=15"></script>
-<script src="js/physics.js?v=15"></script>
-<script src="js/backdrop.js?v=15"></script>
-<script src="js/motion.js?v=15"></script>
-<script src="js/pibo_api.js?v=15"></script>
-<script src="js/custom_style.js?v=15"></script>
-<script src="js/pibo_oled.js?v=15"></script>
-<script src="js/motion_names.js?v=15"></script>
+<script src="js/i18n.js?v=16"></script>
+<script src="js/config.js?v=16"></script>
+<script src="js/dom.js?v=16"></script>
+<script src="js/orbit.js?v=16"></script>
+<script src="js/loaders.js?v=16"></script>
+<script src="js/viewer.js?v=16"></script>
+<script src="js/physics.js?v=16"></script>
+<script src="js/backdrop.js?v=16"></script>
+<script src="js/backdrop_factory.js?v=16"></script>
+<script src="js/motion.js?v=16"></script>
+<script src="js/pibo_api.js?v=16"></script>
+<script src="js/custom_style.js?v=16"></script>
+<script src="js/pibo_oled.js?v=16"></script>
+<script src="js/cf_store.js?v=16"></script>
+<script src="js/pibo_camera.js?v=16"></script>
+<script src="js/motion_names.js?v=16"></script>
 
 <!-- Blockly (실물 IDE 와 같은 10.0.0 빌드 + 같은 블록 정의) -->
 <script src="blockly/blockly_compressed.js"></script>
@@ -160,10 +162,10 @@
 <script src="blockly/disable-top-blocks.js"></script>
 <script src="blockly/js-interpreter.js"></script>
 
-<script src="js/blockly_theme.js?v=15"></script>
-<script src="js/toolbox_sim.js?v=15"></script>
-<script src="js/generator_js.js?v=15"></script>
-<script src="js/blockly_run.js?v=15"></script>
+<script src="js/blockly_theme.js?v=16"></script>
+<script src="js/toolbox_sim.js?v=16"></script>
+<script src="js/generator_js.js?v=16"></script>
+<script src="js/blockly_run.js?v=16"></script>
 
 <script>
 // ── Blockly 워크스페이스 ──
@@ -229,7 +231,7 @@ document.getElementById('btnSave').addEventListener('click', () => {
   a.download = name;
   a.click();
   URL.revokeObjectURL(a.href);
-  devLog('저장: ' + name);
+  devLog(PIBO_T('저장') + ': ' + name);
 });
 document.getElementById('btnLoad').addEventListener('click', () => document.getElementById('fileIn').click());
 document.getElementById('fileIn').addEventListener('change', e => {
@@ -243,8 +245,8 @@ document.getElementById('fileIn').addEventListener('change', e => {
       } else {
         Blockly.serialization.workspaces.load(JSON.parse(txt), devWorkspace);
       }
-      devLog('불러오기 완료: ' + f.name);
-    } catch (err) { devLog('불러오기 실패: ' + err.message, 'err'); }
+      devLog(PIBO_T('불러오기 완료') + ': ' + f.name);
+    } catch (err) { devLog(PIBO_T('불러오기 실패') + ': ' + err.message, 'err'); }
   };
   fr.readAsText(f);
   e.target.value = '';
@@ -259,7 +261,7 @@ document.getElementById('btnReset').addEventListener('click', () => {
   for (const jn in sliderEls) { sliderEls[jn].value = 0; setJointValue(jn, 0); }
   Oled.reset();
   if (typeof PHYS !== 'undefined' && PHYS.on) PHYS.reset();
-  devLog('로봇 초기화');
+  devLog(PIBO_T('로봇 초기화'));
 });
 
 // ── 확대 / 축소 / 맞추기 ──
@@ -307,10 +309,10 @@ function restoreBlocks() {
   try {
     Blockly.serialization.workspaces.load(JSON.parse(raw), devWorkspace);
     const n = devWorkspace.getAllBlocks(false).length;
-    devLog('이전에 하던 작업을 불러왔습니다 (블록 ' + n + '개). 새로 시작하려면 [블록 지우기]');
+    devLog(PIBO_T('이전에 하던 작업을 불러왔습니다') + ' (' + n + ') — ' + PIBO_T('새로 시작하려면 [블록 지우기]'));
     return true;
   } catch (e) {
-    devLog('이전 작업을 복원하지 못했습니다: ' + e.message, 'warn');
+    devLog(PIBO_T('이전 작업을 복원하지 못했습니다') + ': ' + e.message, 'warn');
     try { sessionStorage.removeItem(AUTOSAVE_KEY); } catch (e2) {}
     return false;
   } finally {
@@ -326,7 +328,7 @@ document.getElementById('btnClear').addEventListener('click', () => {
   devStop();
   devWorkspace.clear();
   try { sessionStorage.removeItem(AUTOSAVE_KEY); } catch (e) {}
-  devLog('블록을 모두 지웠습니다');
+  devLog(PIBO_T('블록을 모두 지웠습니다'));
 });
 
 const restored = restoreBlocks();

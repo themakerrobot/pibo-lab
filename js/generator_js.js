@@ -95,6 +95,32 @@
   G['text_prompt'] = b =>
     [`simPrompt(${JSON.stringify(b.getFieldValue('TEXT') || '')}, '${b.getFieldValue('TYPE') || 'TEXT'}')`, ORD_ATOMIC];
 
+  // ── vision (웹캠) · device.touch (머리 클릭) ──
+  // 실물 openpibo 는 이미지를 numpy 배열로 주고받지만 인터프리터에는 객체를 넘길 수 없다.
+  // 시뮬은 'img#N' 문자열 핸들만 흘리고 픽셀은 PiboCam 이 들고 있다.
+  // 인자 이름(tickness 오타 포함)은 실물 블록 정의와 그대로 맞춰야 값이 어긋나지 않는다.
+  G['vision_read']           = () => ['simVisionRead()', ORD_ATOMIC];
+  G['vision_imshow_to_ide']  = b => `simImshowIde(${val(b, 'img', "''")});\n`;
+  G['vision_imshow_to_oled'] = b => `simImshowOled(${val(b, 'img', "''")});\n`;
+  G['vision_rectangle'] = b =>
+    `simVisionRect(${val(b, 'img', "''")}, ${val(b, 'x1', 0)}, ${val(b, 'y1', 0)}, ` +
+    `${val(b, 'x2', 0)}, ${val(b, 'y2', 0)}, ${val(b, 'color', "'#ff0000'")}, ${val(b, 'tickness', 2)});\n`;
+  G['vision_circle'] = b =>
+    `simVisionCircle(${val(b, 'img', "''")}, ${val(b, 'x', 0)}, ${val(b, 'y', 0)}, ` +
+    `${val(b, 'r', 10)}, ${val(b, 'color', "'#ff0000'")}, ${val(b, 'tickness', 2)});\n`;
+  G['vision_line'] = b =>
+    `simVisionLine(${val(b, 'img', "''")}, ${val(b, 'x1', 0)}, ${val(b, 'y1', 0)}, ` +
+    `${val(b, 'x2', 0)}, ${val(b, 'y2', 0)}, ${val(b, 'color', "'#ff0000'")}, ${val(b, 'tickness', 2)});\n`;
+  G['vision_text'] = b =>
+    `simVisionText(${val(b, 'img', "''")}, ${val(b, 'text', "''")}, ${val(b, 'x', 0)}, ` +
+    `${val(b, 'y', 0)}, ${val(b, 'size', 20)}, ${val(b, 'color', "'#ff0000'")});\n`;
+  G['device_get_touch'] = () => ['simGetTouch()', ORD_ATOMIC];
+
+  // 분류 모델 — 실물은 cf.load(dir+modelpath, dir+labelpath) 로 두 경로를 받지만
+  // 웹에는 라벨 파일이 따로 없다(모델과 함께 저장된다). modelpath 만 이름으로 쓴다.
+  G['vision_load_cf']    = b => `simLoadCf(${val(b, 'modelpath', "''")});\n`;
+  G['vision_predict_cf'] = b => [`simPredictCf(${val(b, 'img', "''")})`, ORD_ATOMIC];
+
   // ── 사용자 정의 함수 안에서도 대기가 되도록 ──
   // JS-Interpreter 를 쓰므로 async 전염 문제는 없다. 원본 제너레이터를 그대로 둔다.
 

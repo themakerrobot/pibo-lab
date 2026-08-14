@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>파이보 랩 — 게임툴</title>
-<link rel="stylesheet" href="css/all.min.css?v=15">
+<link rel="stylesheet" href="css/all.min.css?v=16">
 <link rel="icon" type="image/png" href="img/favicon.png">
-<link rel="stylesheet" href="fonts/pretendard.css?v=15">
-<link rel="stylesheet" href="css/style.css?v=15">
+<link rel="stylesheet" href="fonts/pretendard.css?v=16">
+<link rel="stylesheet" href="css/style.css?v=16">
 <style>
   html,body{height:100%;margin:0;overflow:hidden}
   #gTop{height:54px;display:flex;align-items:center;gap:8px;padding:0 14px;
@@ -63,6 +63,7 @@
   <span class="title"><img src="img/pibo-logo.png" alt="" style="height:30px">파이보 랩</span>
   <a class="navlink" href="index.html">체험툴</a>
   <a class="navlink" href="dev.html">개발툴</a>
+  <a class="navlink" href="classify.html">분류툴</a>
   <span class="navlink on">게임툴</span>
   <span style="width:1px;height:20px;background:var(--line-soft,#E7EEF1)"></span>
   <button class="db run" id="gBtnRun"><i class="fa-solid fa-play"></i> 실행</button>
@@ -104,9 +105,7 @@
           <option value="road">주행 매트</option>
           <option value="sumo">스모 링</option>
           <option value="soccer">축구장</option>
-          <option value="space">우주 기지</option>
           <option value="kitchen">주방 조리대</option>
-          <option value="plain">심플</option>
         </select>
         <button class="zb" id="zoomIn"  title="확대">＋</button>
         <button class="zb" id="zoomOut" title="축소">－</button>
@@ -131,22 +130,23 @@
   <select id="themeSel"><option value="desk">책상</option></select>
 </div>
 
-<script src="lib/three.min.js?v=15"></script>
+<script src="lib/three.min.js?v=16"></script>
 
 <!-- 시뮬레이터 (체험툴과 완전히 같은 파일 — 수정하지 않음) -->
-<script src="js/i18n.js?v=15"></script>
-<script src="js/config.js?v=15"></script>
-<script src="js/dom.js?v=15"></script>
-<script src="js/orbit.js?v=15"></script>
-<script src="js/loaders.js?v=15"></script>
-<script src="js/viewer.js?v=15"></script>
-<script src="js/physics.js?v=15"></script>
-<script src="js/backdrop.js?v=15"></script>
-<script src="js/motion.js?v=15"></script>
-<script src="js/pibo_api.js?v=15"></script>
-<script src="js/custom_style.js?v=15"></script>
-<script src="js/pibo_oled.js?v=15"></script>
-<script src="js/motion_names.js?v=15"></script>
+<script src="js/i18n.js?v=16"></script>
+<script src="js/config.js?v=16"></script>
+<script src="js/dom.js?v=16"></script>
+<script src="js/orbit.js?v=16"></script>
+<script src="js/loaders.js?v=16"></script>
+<script src="js/viewer.js?v=16"></script>
+<script src="js/physics.js?v=16"></script>
+<script src="js/backdrop.js?v=16"></script>
+<script src="js/backdrop_factory.js?v=16"></script>
+<script src="js/motion.js?v=16"></script>
+<script src="js/pibo_api.js?v=16"></script>
+<script src="js/custom_style.js?v=16"></script>
+<script src="js/pibo_oled.js?v=16"></script>
+<script src="js/motion_names.js?v=16"></script>
 
 <!-- Blockly -->
 <script src="blockly/blockly_compressed.js"></script>
@@ -158,13 +158,13 @@
 <script src="blockly/disable-top-blocks.js"></script>
 
 <!-- 게임 전용 (game_ 접두어) -->
-<script src="js/blockly_theme.js?v=15"></script>
-<script src="js/game_engine.js?v=15"></script>
-<script src="js/game_blocks.js?v=15"></script>
-<script src="js/game_gen.js?v=15"></script>
-<script src="js/game_toolbox.js?v=15"></script>
-<script src="js/game_examples.js?v=15"></script>
-<script src="js/game_run.js?v=15"></script>
+<script src="js/blockly_theme.js?v=16"></script>
+<script src="js/game_engine.js?v=16"></script>
+<script src="js/game_blocks.js?v=16"></script>
+<script src="js/game_gen.js?v=16"></script>
+<script src="js/game_toolbox.js?v=16"></script>
+<script src="js/game_examples.js?v=16"></script>
+<script src="js/game_run.js?v=16"></script>
 
 <script>
 const gameWorkspace = Blockly.inject('gBlockly',
@@ -215,7 +215,7 @@ document.getElementById('gBtnSave').addEventListener('click', () => {
   a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
   a.download = 'pibo_game.json';
   a.click(); URL.revokeObjectURL(a.href);
-  gLog('저장: pibo_game.json');
+  gLog(PIBO_T('저장') + ': pibo_game.json');
 });
 document.getElementById('gBtnLoad').addEventListener('click', () => document.getElementById('gFileIn').click());
 
@@ -265,8 +265,8 @@ document.getElementById('gFileIn').addEventListener('change', e => {
   fr.onload = ev => {
     try {
       Blockly.serialization.workspaces.load(JSON.parse(ev.target.result), gameWorkspace);
-      gLog('불러오기 완료: ' + f.name);
-    } catch (err) { gLog('불러오기 실패: ' + err.message, 'err'); }
+      gLog(PIBO_T('불러오기 완료') + ': ' + f.name);
+    } catch (err) { gLog(PIBO_T('불러오기 실패') + ': ' + err.message, 'err'); }
   };
   fr.readAsText(f); e.target.value = '';
 });
@@ -277,7 +277,7 @@ document.getElementById('gBtnClear').addEventListener('click', () => {
   if (gameWorkspace.getAllBlocks(false).length && !confirm('작업 중인 블록을 모두 지울까요?')) return;
   gameStop(); gameWorkspace.clear();
   try { sessionStorage.removeItem(GAME_SAVE_KEY); } catch (e) {}
-  gLog('블록을 모두 지웠습니다');
+  gLog(PIBO_T('블록을 모두 지웠습니다'));
 });
 
 // 확대 / 축소 / 테마
@@ -311,7 +311,7 @@ function gAutosave() {
   gRestoring = true;
   try {
     Blockly.serialization.workspaces.load(JSON.parse(raw), gameWorkspace);
-    gLog('이전에 만들던 게임을 불러왔습니다. 새로 시작하려면 [블록 지우기]');
+    gLog(PIBO_T('이전에 만들던 게임을 불러왔습니다. 새로 시작하려면 [블록 지우기]'));
   } catch (e) { try { sessionStorage.removeItem(GAME_SAVE_KEY); } catch (e2) {} }
   finally {
     gRestoring = false;
@@ -322,7 +322,7 @@ function gAutosave() {
 })();
 gameWorkspace.addChangeListener(ev => { if (!ev.isUiEvent) gAutosave(); });
 
-gLog('준비 완료 — 블록을 조립하고 ▶ 실행을 누르세요');
+gLog(PIBO_T('준비 완료 — 블록을 조립하고 ▶ 실행을 누르세요'));
 </script>
 
 <script type="module">

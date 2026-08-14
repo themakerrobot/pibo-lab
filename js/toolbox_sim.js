@@ -11,6 +11,7 @@ const TR = k => (typeof translations !== 'undefined' && translations[k])
 const N = (n, num) => ({ shadow: { type: 'math_number', fields: { NUM: String(num) } } });
 const T = (t) => ({ shadow: { type: 'text', fields: { TEXT: t } } });
 const V = () => ({ shadow: { type: 'variables_get' } });
+const C = (hex) => ({ shadow: { type: 'colour_picker', fields: { COLOUR: hex } } });
 
 const SIM_TOOLBOX = {
   kind: 'categoryToolbox',
@@ -120,6 +121,7 @@ const SIM_TOOLBOX = {
         { kind: 'block', type: 'device_eye_colour_on', inputs: { left: V(), right: V() } },
         { kind: 'block', type: 'device_eye_on',
           inputs: { val0: N('', 0), val1: N('', 224), val2: N('', 255), val3: N('', 0), val4: N('', 224), val5: N('', 255) } },
+        { kind: 'block', type: 'device_get_touch' },
       ] },
 
     { kind: 'category', name: TR('motion'), colour: color_type['motion'],
@@ -153,6 +155,35 @@ const SIM_TOOLBOX = {
       contents: [
         // 온디바이스 TTS 하나만 노출 (나머지 음성 블록은 정의만 남기고 숨김)
         { kind: 'block', type: 'speech_otts_play', inputs: { text: T(TR('sample_text')), volume: N('volume', 80) } },
+      ] },
+
+    { kind: 'category', name: TR('vision'), colour: color_type['vision'],
+      cssConfig: { icon: 'customIcon fa-solid fa-camera' },
+      contents: [
+        { kind: 'block', type: 'vision_read' },
+        { kind: 'block', type: 'vision_imshow_to_ide' },
+        { kind: 'block', type: 'vision_imshow_to_oled' },
+        { kind: 'block', type: 'vision_rectangle',
+          inputs: { x1: N('x1', 100), y1: N('y1', 80), x2: N('x2', 300), y2: N('y2', 250),
+                    color: C('#ff3b30'), tickness: N('tickness', 3) } },
+        { kind: 'block', type: 'vision_circle',
+          inputs: { x: N('x', 320), y: N('y', 240), r: N('r', 80),
+                    color: C('#00bedc'), tickness: N('tickness', 3) } },
+        { kind: 'block', type: 'vision_line',
+          inputs: { x1: N('x1', 60), y1: N('y1', 60), x2: N('x2', 400), y2: N('y2', 300),
+                    color: C('#4fbf6a'), tickness: N('tickness', 3) } },
+        { kind: 'block', type: 'vision_text',
+          inputs: { text: T(TR('sample_text')), x: N('x', 30), y: N('y', 30),
+                    size: N('size', 30), color: C('#ffffff') } },
+      ] },
+
+    { kind: 'category', name: TR('recognition'), colour: color_type['recognition'],
+      cssConfig: { icon: 'customIcon fa-solid fa-glasses' },
+      contents: [
+        // 분류툴에서 저장한 모델 이름을 적는다. 실물에서는 앞의 폴더가 붙어 경로가 된다.
+        { kind: 'block', type: 'vision_load_cf',
+          inputs: { modelpath: T('model'), labelpath: T('labels.txt') } },
+        { kind: 'block', type: 'vision_predict_cf' },
       ] },
 
     { kind: 'category', name: TR('utils'), colour: color_type['utils'],

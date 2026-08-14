@@ -164,6 +164,21 @@ function buildInterpreterApi(interp, scope) {
   setAsync('simPrompt', (msg, type, cb) => {
     promptAsync(native(msg), String(native(type) || 'TEXT')).then(v => cb(v));
   });
+
+  // ── vision / device.touch ──
+  // 이미지는 'img#N' 문자열 핸들로만 오간다 (실제 픽셀은 PiboCam 안에 있다)
+  setAsync('simVisionRead', cb => { PiboCam.read().then(id => cb(id)); });
+  set('simImshowIde',  id => { PiboCam.show(native(id)); });
+  set('simImshowOled', id => { PiboCam.toOled(native(id)); });
+  set('simVisionRect',   (id, x1, y1, x2, y2, c, t) => PiboCam.rectangle(native(id), x1, y1, x2, y2, native(c), t));
+  set('simVisionCircle', (id, x, y, r, c, t)        => PiboCam.circle(native(id), x, y, r, native(c), t));
+  set('simVisionLine',   (id, x1, y1, x2, y2, c, t) => PiboCam.line(native(id), x1, y1, x2, y2, native(c), t));
+  set('simVisionText',   (id, s, x, y, sz, c)       => PiboCam.text(native(id), native(s), x, y, sz, native(c)));
+  set('simGetTouch', () => PiboTouch.value());
+
+  // 분류 모델 — 불러오기·추론 모두 시간이 걸리므로 비동기
+  setAsync('simLoadCf',    (path, cb) => { PiboCf.load(native(path)).then(() => cb()); });
+  setAsync('simPredictCf', (id, cb)   => { PiboCf.predict(native(id)).then(v => cb(v)); });
 }
 
 // ── 실행 / 정지 ──
@@ -173,7 +188,9 @@ function devRun() {
 
   Blockly.JavaScript.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
   Blockly.JavaScript.addReservedWords('highlightBlock,simSleep,simSpeak,simPlayMotion,simSetMotor,' +
-    'simSetMotors,simInitMotion,simEye,simEyeRGB,simOled,simNote,simPrint,simNow,simGetMotionList,simAngle,simPrompt');
+    'simSetMotors,simInitMotion,simEye,simEyeRGB,simOled,simNote,simPrint,simNow,simGetMotionList,simAngle,simPrompt,' +
+    'simVisionRead,simImshowIde,simImshowOled,simVisionRect,simVisionCircle,simVisionLine,simVisionText,simGetTouch,' +
+    'simLoadCf,simPredictCf');
 
   let code;
   try {
