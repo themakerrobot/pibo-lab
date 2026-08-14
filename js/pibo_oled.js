@@ -1,3 +1,71 @@
+// ── 뷰포트 좌측 패널 공통 틀 (OLED · 카메라) ──
+// 둘 다 3D 화면을 가리므로 접을 수 있어야 한다.
+// 각자 absolute 로 띄우면 하나를 접어도 빈자리가 남으므로 세로로 쌓는 컨테이너에 넣는다.
+const PiboPanels = (function () {
+  let host = null;
+
+  function getHost() {
+    if (host && host.parentNode) return host;
+    const vp = document.getElementById('vp');
+    if (!vp) return null;
+    host = document.createElement('div');
+    host.id = 'vpPanels';
+    host.style.cssText = 'position:absolute;left:12px;top:10px;z-index:20;' +
+      'display:flex;flex-direction:column;gap:8px;align-items:flex-start';
+    vp.appendChild(host);
+    return host;
+  }
+
+  // 접힘 상태는 새로고침해도 유지한다
+  function saved(key) {
+    try { return localStorage.getItem('piboLab.panel.' + key) === 'off'; } catch (e) { return false; }
+  }
+  function store(key, off) {
+    try { localStorage.setItem('piboLab.panel.' + key, off ? 'off' : 'on'); } catch (e) { /* 무시 */ }
+  }
+
+  // 반환: { box, body } — body 안에 내용을 넣으면 된다
+  function make(key, title) {
+    const h = getHost();
+    if (!h) return null;
+
+    const box = document.createElement('div');
+    box.style.cssText = 'background:rgba(255,255,255,.94);border:1px solid var(--line,#DDE6EA);' +
+      'border-radius:10px;box-shadow:0 1px 2px rgba(35,54,66,.05),0 4px 14px rgba(35,54,66,.06);' +
+      'padding:5px 7px 6px;user-select:none';
+
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer;' +
+      'font-size:10px;font-weight:700;color:var(--ink3,#96A5AE);padding:1px 0 4px';
+
+    const cap = document.createElement('span');
+    cap.textContent = title;
+    cap.style.cssText = 'flex:1';
+
+    const arw = document.createElement('span');
+    arw.textContent = '▼';
+    arw.style.cssText = 'font-size:9px;line-height:1;transition:transform .15s';
+
+    head.appendChild(cap); head.appendChild(arw);
+    const body = document.createElement('div');
+
+    let off = saved(key);
+    function apply() {
+      body.style.display = off ? 'none' : '';
+      arw.style.transform = off ? 'rotate(-90deg)' : '';
+      head.style.paddingBottom = off ? '1px' : '4px';
+    }
+    head.addEventListener('click', () => { off = !off; store(key, off); apply(); });
+    apply();
+
+    box.appendChild(head); box.appendChild(body);
+    h.appendChild(box);
+    return { box: box, body: body, head: head, caption: cap };
+  }
+
+  return { make: make };
+})();
+
 // OLED 에뮬레이션 — 128×64 캔버스를 몸통 LCD 텍스처로 출력
 // 실물 openpibo 와 동작을 맞춤: draw_* 는 버퍼에만 그리고, show() 해야 화면에 나온다.
 // 미리보기 품질을 위해 같은 내용을 4배 해상도 버퍼(hi)에도 함께 그린다.
@@ -56,21 +124,13 @@ const Oled = (function () {
   let pv = null, pvg = null;
   function mountPreview() {
     if (pv) return;
-    const vp = document.getElementById('vp');
-    if (!vp) return;
-    const box = document.createElement('div');
-    box.id = 'oledPreview';
-    box.style.cssText = 'position:absolute;left:12px;top:10px;z-index:20;' +
-      'background:rgba(255,255,255,.94);border:1px solid var(--line,#DDE6EA);border-radius:10px;' +
-      'box-shadow:0 1px 2px rgba(35,54,66,.05),0 4px 14px rgba(35,54,66,.06);padding:7px 7px 4px;user-select:none';
+    const p = PiboPanels.make('oled', 'OLED');
+    if (!p) return;
+    p.box.id = 'oledPreview';
     pv = document.createElement('canvas');
     pv.width = W * SC; pv.height = H * SC;   // 고해상도 버퍼 그대로 담고 CSS 로 축소 표시
     pv.style.cssText = 'display:block;width:192px;height:96px;border-radius:5px;background:#000';
-    const lbl = document.createElement('div');
-    lbl.textContent = 'OLED';
-    lbl.style.cssText = 'font-size:10px;color:var(--ink3,#96A5AE);margin-top:4px;font-weight:600';
-    box.appendChild(pv); box.appendChild(lbl);
-    vp.appendChild(box);
+    p.body.appendChild(pv);
     pvg = pv.getContext('2d');
   }
 
@@ -147,6 +207,34 @@ const Oled = (function () {
 
     clear() {
       both(c => { c.fillStyle = paper(); c.fillRect(0, 0, W, H); });
+    },
+
+    // 카메라 이미지를 128×64 흑백으로 변환해 버퍼에 넣는다 (실물 oled.imshow)
+    // 실물 OLED 는 1비트라 중간 밝기가 없다. 밝기 임계값으로 흑/백만 남긴다.
+    image(src) {
+      if (!src) return;
+      const tmp = document.createElement('canvas');
+      tmp.width = W; tmp.height = H;
+      const tg = tmp.getContext('2d');
+      tg.fillStyle = '#000'; tg.fillRect(0, 0, W, H);
+      const s = Math.min(W / src.width, H / src.height);
+      const w = src.width * s, h = src.height * s;
+      tg.drawImage(src, (W - w) / 2, (H - h) / 2, w, h);
+
+      const im = tg.getImageData(0, 0, W, H), d = im.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const y = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+        const v = y > 110 ? 255 : 0;
+        d[i] = d[i + 1] = d[i + 2] = inverted ? 255 - v : v;
+        d[i + 3] = 255;
+      }
+      tg.putImageData(im, 0, 0);
+
+      g.drawImage(tmp, 0, 0);
+      // hg 에는 이미 SC 배 변환이 걸려 있으므로 128×64 좌표 그대로 그린다
+      hg.imageSmoothingEnabled = false;
+      hg.drawImage(tmp, 0, 0, W, H);
+      push();
     },
 
     show() { push(); },
