@@ -285,7 +285,6 @@ const PIBO_I18N = {
   '앞뒤': 'Front/back',
   '크기': 'Size',
   '고개 각도': 'Head angle',
-  '벨트 거리': 'Belt distance',
   '카메라가 꺼져 있습니다': 'The camera is off',
   '준비 중': 'Getting ready',
   '준비 중…': 'Getting ready…',
