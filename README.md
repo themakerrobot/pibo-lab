@@ -4,8 +4,10 @@ PIBO 휴머노이드 로봇용 웹 URDF 시뮬레이터. 브라우저에서 URDF
 
 데모:
 
+[Dev]
 https://themakerrobot.github.io/pibo-lab/
 
+[Release]
 https://pibo-lab.themaker.workers.dev/
 
 ## 기능
