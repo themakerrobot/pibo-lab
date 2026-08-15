@@ -502,11 +502,54 @@
   // ── 소스 전환 ──
   // 파이보가 보는 화면을 미리보기에 계속 그린다 (샘플로 찍히는 것과 같은 그림)
   let povTimer = null;
+  let blackSince = 0, fixedOnce = false;
+
+  function povNotice(msg) {
+    const cv = $('povView');
+    if (!cv) return;
+    if (cv.width !== 640) { cv.width = 640; cv.height = 480; }
+    const g = cv.getContext('2d');
+    g.fillStyle = '#0C1114'; g.fillRect(0, 0, 640, 480);
+    g.fillStyle = '#56646C'; g.font = 'bold 26px sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(msg, 320, 240);
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  }
+
+  // 화면이 온통 검게 나오는 일이 가끔 있다.
+  // 3D 가 화면 크기·조명을 잡기 전에 첫 장을 찍으면 그렇게 되고, 그대로 굳는다.
+  // 몇 점만 찍어 보고 계속 검으면 크기를 다시 잡아 스스로 복구한다.
+  function looksBlack(g) {
+    const pts = [[320, 240], [120, 120], [520, 360], [320, 80]];
+    for (let i = 0; i < pts.length; i++) {
+      const d = g.getImageData(pts[i][0], pts[i][1], 1, 1).data;
+      if (d[0] > 12 || d[1] > 12 || d[2] > 12) return false;
+    }
+    return true;
+  }
+
   function povLoop() {
     const cv = $('povView'), src = frame();
-    if (!cv || !src) return;
+    if (!cv) return;
+    if (!src) { povNotice(T('3D 준비 중')); return; }
     if (cv.width !== 640) { cv.width = 640; cv.height = 480; }
-    cv.getContext('2d').drawImage(src, 0, 0, 640, 480);
+    const g = cv.getContext('2d');
+    g.drawImage(src, 0, 0, 640, 480);
+
+    if (!looksBlack(g)) { blackSince = 0; return; }
+    if (!blackSince) { blackSince = Date.now(); return; }
+    if (fixedOnce || Date.now() - blackSince < 1500) return;
+
+    // 한 번만 되살려 본다 — 크기를 다시 잡고 무대를 다시 그린다
+    fixedOnce = true;
+    window.dispatchEvent(new Event('resize'));
+    if (typeof PiboView !== 'undefined' && PiboView.calibrate) PiboView.calibrate();
+    if (typeof setTheme === 'function' && typeof FactoryLine !== 'undefined') {
+      setTheme('factory_' + FactoryLine.line());
+      FactoryLine.stage($('itemSel').value);
+      setTilt(tilt);
+    }
+    console.warn('[classify] 파이보 뷰가 검게 나와 다시 잡았습니다');
   }
 
   async function applySource() {
@@ -541,8 +584,12 @@
         FactoryLine.stage($('itemSel').value);
       }
       setTilt(tilt);        // 무대를 다시 만들면 자세도 다시 잡아 준다
-      // 3D 는 화면 크기가 바뀌면 다시 잡아야 한다
-      window.dispatchEvent(new Event('resize'));
+      // 3D 는 화면 크기가 바뀌면 다시 잡아야 한다.
+      // 방금 화면에 나타난 참이라 배치가 끝난 뒤(두 프레임 후)에 알려야 크기가 제대로 잡힌다.
+      blackSince = 0; fixedOnce = false;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { window.dispatchEvent(new Event('resize')); });
+      });
     }
     try { localStorage.setItem('piboLab.camSource', source); } catch (e) { /* 무시 */ }
     refreshUI(); steps();

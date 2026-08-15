@@ -488,27 +488,22 @@ function mountLangToggle() {
            || document.getElementById('cfTop') || document.querySelector('header');
   if (!bar || document.getElementById('langToggle')) return;
 
-  const wrap = document.createElement('span');
-  wrap.id = 'langToggle';
-  wrap.style.cssText = 'display:inline-flex;gap:4px;align-items:center';
+  // vapi-od 와 같은 방식: 버튼 하나에 '바꿀 언어' 를 적어 두고 누르면 전환된다.
+  const toKo = (PIBO_LANG !== 'ko');
+  const b = document.createElement('button');
+  b.id = 'langToggle';
+  b.type = 'button';
+  b.textContent = toKo ? '한' : 'EN';
+  b.title = '한국어 / English';
+  b.style.cssText =
+    'border:1.5px solid var(--line,#9A8F7D);background:var(--panel,#fff);' +
+    'color:var(--ink,#2A2620);border-radius:var(--r-s,6px);padding:6px 10px;' +
+    'font-size:12.5px;font-weight:600;min-width:46px;text-align:center;line-height:1;' +
+    'font-family:inherit;cursor:pointer';
+  b.addEventListener('click', function () { setLanguage(toKo ? 'ko' : 'en'); });
 
-  [['ko', '한'], ['en', 'EN']].forEach(function (p) {
-    const on = PIBO_LANG === p[0];
-    const b = document.createElement('button');
-    b.textContent = p[1];
-    b.style.cssText =
-      'border:1px solid ' + (on ? 'var(--acc,#00BEDC)' : 'var(--line,#DDE6EA)') + ';' +
-      'background:' + (on ? 'var(--acc,#00BEDC)' : 'var(--panel,#fff)') + ';' +
-      'color:' + (on ? 'var(--acc-deep,#04303A)' : 'var(--ink2,#5C6E79)') + ';' +
-      'border-radius:999px;padding:6px 10px;font-size:12px;font-weight:600;' +
-      'min-width:38px;text-align:center;line-height:1;' +
-      'font-family:inherit;cursor:' + (on ? 'default' : 'pointer');
-    if (!on) b.addEventListener('click', function () { setLanguage(p[0]); });
-    wrap.appendChild(b);
-  });
-
-  // 3페이지 공통: 상단바 맨 오른쪽 끝에 고정
-  bar.appendChild(wrap);
+  // 페이지 공통: 상단바 맨 오른쪽 끝에 고정
+  bar.appendChild(b);
 }
 
 if (document.readyState === 'loading') {
