@@ -44,7 +44,7 @@ const LOCK_PAGE = `<!doctype html>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>파이보 랩 — 시험버전</title>
+<title>파이보 랩</title>
 <style>
   :root {
     --brand:#00BEDC; --brand-dim:#0097AF; --ink:#0F1B22;
@@ -101,8 +101,8 @@ const LOCK_PAGE = `<!doctype html>
     </svg>
     <div class="badge">시험버전 · TEST BUILD</div>
     <h1>파이보 랩 준비 중입니다</h1>
-    <p>현재 내부 확인을 위해 접근이 제한되어 있습니다.</p>
-    <p>접속 계정은 별도로 안내드립니다.</p>
+    <p>현재 Free 테스트 기간입니다.</p>
+    <p>시험 계정은 test / 1234 입니다..</p>
     <div class="dots"><i></i><i></i><i></i></div>
     <div class="divider"></div>
     <p class="foot">Pibo Lab · Circulus</p>
