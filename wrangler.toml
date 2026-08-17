@@ -1,0 +1,8 @@
+name = "pibo-lab"
+main = "./src/index.js"
+compatibility_date = "2026-08-18"
+
+[assets]
+directory = "./"
+binding = "ASSETS"
+run_worker_first = true
