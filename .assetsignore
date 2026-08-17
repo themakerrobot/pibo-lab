@@ -9,3 +9,5 @@ node_modules
 *.ps1
 *.zip
 *.md
+.git
+.wrangler
