@@ -2,8 +2,6 @@ name = "pibo-lab"
 main = "./src/index.js"
 compatibility_date = "2026-08-17"
 
-secrets = ["BASIC_USER", "BASIC_PASS"]
-
 [assets]
 directory = "./"
 binding = "ASSETS"
