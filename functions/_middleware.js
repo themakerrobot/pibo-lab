@@ -33,7 +33,7 @@ export async function onRequest(context) {
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>파이보 랩 — 시험버전</title>
+<title>파이보 랩</title>
 <style>
   :root {
     --brand: #00BEDC;
@@ -121,8 +121,7 @@ export async function onRequest(context) {
 
     <div class="badge">시험버전 · TEST BUILD</div>
     <h1>파이보 랩 준비 중입니다</h1>
-    <p>현재 내부 확인을 위해 접근이 제한되어 있습니다.</p>
-    <p>접속 계정은 별도로 안내드립니다.</p>
+    <p>테스트 계정은 test / 1234 입니다.</p>
 
     <div class="dots"><i></i><i></i><i></i></div>
     <div class="divider"></div>
