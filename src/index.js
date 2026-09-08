@@ -167,6 +167,7 @@ function loginPage(next, error) {
     '인증 서버에 연결할 수 없습니다.':'Could not reach the sign-in server.',
     '사용할 수 없는 계정입니다.':'This account cannot be used.',
     '이용 기간이 만료된 계정입니다.':'This account has expired.',
+    '서버 설정이 완료되지 않았습니다.':'The server is not fully configured yet.',
     '로그인 — 파이보 랩':'Sign in — Pibo Lab'
   };
   var lang='ko';
@@ -214,6 +215,8 @@ export default {
       const pw = (form.get("pw") || "").toString();
       const next = safeNext(form.get("next")?.toString());
       if (!id || !pw) return loginPage(next, "아이디와 비밀번호를 입력하세요.");
+      // SESSION_SECRET 이 아직 등록되지 않았으면 세션을 만들 수 없다 (1101 대신 안내)
+      if (!env.SESSION_SECRET) { console.log("SESSION_SECRET is not set"); return loginPage(next, "서버 설정이 완료되지 않았습니다."); }
       let sr;
       try { sr = await apiSignin(id, pw, env); } catch (e) { console.log(`signin ${id} -> error ${e}`); return loginPage(next, "인증 서버에 연결할 수 없습니다."); }
       console.log(`signin ${id} -> ${sr.code} (expired=${sr.expired} end=${sr.endDate})`);
