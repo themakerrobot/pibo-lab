@@ -1,7 +1,7 @@
 // Pibo Lab portable — the whole site embedded in one exe, behind 파이보 랩 통합 계정 로그인.
 //
 //	POST /signin → 토큰 저장, GET /auth/check 로 로그인 직후 1회 + 주기 재검증, POST /signout 로 로그아웃
-//	사용법: PiboLab.exe [-port 50030] [-secret ...] [-hours 24] [-check 10] [-api ...] [-client-id pibolab] [-unique ""] [-debug]
+//	사용법: PiboLab.exe [-port 50030] [-secret ...] [-hours 2] [-check 10] [-api ...] [-client-id pibolab] [-unique ""] [-debug]
 //	토큰 서명은 검증하지 않는다(비밀키 없음) — auth/check 에 위임.
 package main
 
@@ -43,7 +43,7 @@ var (
 	clientID = flag.String("client-id", "pibolab", "x-client-id 헤더 값")
 	unique   = flag.String("unique", "", "signin unique 값 (빈 문자열 고정)")
 	secret   = flag.String("secret", "", "session signing secret (기본: 실행마다 랜덤 → 재시작 시 재로그인)")
-	hours    = flag.Int("hours", 24, "session lifetime (hours)")
+	hours    = flag.Int("hours", 2, "유휴 만료: 마지막 활동 후 N시간 (하트비트로 연장)")
 	checkMin = flag.Int("check", 10, "auth/check 재검증 주기 (minutes)")
 	noOpen   = flag.Bool("no-open", false, "브라우저 자동 열기 끄기")
 	debug    = flag.Bool("debug", false, "signin 응답 body 를 콘솔에 출력 (토큰은 가림)")
@@ -299,6 +299,7 @@ const loginHTML = `<!doctype html>
     '인증 서버에 연결할 수 없습니다.':'Could not reach the sign-in server.',
     '사용할 수 없는 계정입니다.':'This account cannot be used.',
     '이용 기간이 만료된 계정입니다.':'This account has expired.',
+    '서버 설정이 완료되지 않았습니다.':'The server is not fully configured yet.',
     '로그인 — 파이보 랩':'Sign in — Pibo Lab'
   };
   var lang='ko';
@@ -423,6 +424,7 @@ func main() {
 			return
 		}
 		now := time.Now().Unix()
+		// 주기적 재검증 + 유휴 만료 연장 (쓰는 동안은 Exp 가 계속 밀린다. 토큰 자체 만료는 auth/check 가 걸러낸다)
 		if now-s.Chk >= int64(*checkMin)*60 {
 			ok, err := apiCheck(s.T)
 			if err != nil {
@@ -434,7 +436,12 @@ func main() {
 				return
 			}
 			s.Chk = now
-			setCookie(w, signSession(*s), int(s.Exp-now))
+			s.Exp = now + int64(*hours)*3600
+			setCookie(w, signSession(*s), *hours*3600)
+		} else if r.URL.Path == "/me" {
+			// 하트비트: 검증 주기가 아니어도 유휴 만료는 연장
+			s.Exp = now + int64(*hours)*3600
+			setCookie(w, signSession(*s), *hours*3600)
 		}
 		// HTML 은 항상 서버까지 오게 (캐시에서 열리면 check 가 실행되지 않음)
 		if r.URL.Path == "/" || strings.HasSuffix(r.URL.Path, "/") || strings.HasSuffix(r.URL.Path, ".html") {

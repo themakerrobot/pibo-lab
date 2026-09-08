@@ -14,7 +14,7 @@ async function hmacKey(secret) {
   return crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
 }
 
-// 세션 = { u: userId, t: 토큰, exp: 만료, chk: 마지막 검증 시각 }
+// 세션 = { u: userId, t: 토큰, exp: 유휴 만료(활동마다 연장), chk: 마지막 검증 시각 }
 async function signSession(data, env) {
   const p = b64u(enc.encode(JSON.stringify(data)));
   const sig = b64u(await crypto.subtle.sign("HMAC", await hmacKey(env.SESSION_SECRET), enc.encode(p)));
@@ -167,6 +167,7 @@ function loginPage(next, error) {
     '인증 서버에 연결할 수 없습니다.':'Could not reach the sign-in server.',
     '사용할 수 없는 계정입니다.':'This account cannot be used.',
     '이용 기간이 만료된 계정입니다.':'This account has expired.',
+    '서버 설정이 완료되지 않았습니다.':'The server is not fully configured yet.',
     '로그인 — 파이보 랩':'Sign in — Pibo Lab'
   };
   var lang='ko';
@@ -200,7 +201,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const now = Math.floor(Date.now() / 1000);
-    const hours = Number(env.SESSION_HOURS || 24);
+    const hours = Number(env.SESSION_HOURS || 2); // 유휴 만료 (마지막 활동 후 N시간)
 
     if (url.pathname === "/healthz") return new Response("ok");
     // 로그인 화면이 쓰는 에셋(로고·캐릭터·폰트)은 세션 없이도 서빙
@@ -214,6 +215,8 @@ export default {
       const pw = (form.get("pw") || "").toString();
       const next = safeNext(form.get("next")?.toString());
       if (!id || !pw) return loginPage(next, "아이디와 비밀번호를 입력하세요.");
+      // SESSION_SECRET 이 아직 등록되지 않았으면 세션을 만들 수 없다 (1101 대신 안내)
+      if (!env.SESSION_SECRET) { console.log("SESSION_SECRET is not set"); return loginPage(next, "서버 설정이 완료되지 않았습니다."); }
       let sr;
       try { sr = await apiSignin(id, pw, env); } catch (e) { console.log(`signin ${id} -> error ${e}`); return loginPage(next, "인증 서버에 연결할 수 없습니다."); }
       console.log(`signin ${id} -> ${sr.code} (expired=${sr.expired} end=${sr.endDate})`);
@@ -237,13 +240,18 @@ export default {
     let session = await readSession(request, env).catch(() => null);
     if (!session) return toLogin(url);
 
-    // 주기적 재검증
+    // 주기적 재검증 + 유휴 만료 연장 (쓰는 동안은 exp 가 계속 밀린다. 토큰 자체 만료는 auth/check 가 걸러낸다)
     let refreshed = null;
     if (now - (session.chk || 0) >= Number(env.CHECK_MINUTES || 10) * 60) {
       let ok = false;
       try { ok = await apiCheck(session.t, env); } catch { ok = true; } // 서버 장애 시엔 통과, 다음 주기에 재시도
       if (!ok) return new Response(null, { status: 302, headers: { Location: "/login", "Set-Cookie": cookieHeader("", 0) } });
       session.chk = now;
+      session.exp = now + hours * 3600;
+      refreshed = await signSession(session, env);
+    } else if (url.pathname === "/me") {
+      // 하트비트: 검증 주기가 아니어도 유휴 만료는 연장
+      session.exp = now + hours * 3600;
       refreshed = await signSession(session, env);
     }
 
