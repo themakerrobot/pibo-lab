@@ -299,6 +299,7 @@ const loginHTML = `<!doctype html>
     '인증 서버에 연결할 수 없습니다.':'Could not reach the sign-in server.',
     '사용할 수 없는 계정입니다.':'This account cannot be used.',
     '이용 기간이 만료된 계정입니다.':'This account has expired.',
+    '서버 설정이 완료되지 않았습니다.':'The server is not fully configured yet.',
     '로그인 — 파이보 랩':'Sign in — Pibo Lab'
   };
   var lang='ko';
