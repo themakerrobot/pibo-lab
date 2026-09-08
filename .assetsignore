@@ -1,0 +1,14 @@
+src/
+wrangler.toml
+.dev.vars
+.assetsignore
+.github/
+tools/
+dist/
+node_modules/
+.wrangler/
+.git/
+*.bat
+*.ps1
+*.zip
+*.md

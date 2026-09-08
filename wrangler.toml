@@ -1,0 +1,18 @@
+name = "pibo-lab"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[assets]
+directory = "./"
+binding = "ASSETS"
+run_worker_first = true
+
+[vars]
+API_BASE = "https://api-intgr.circul.us/v1"
+CLIENT_ID = "pibolab"
+UNIQUE = ""          # signin unique 값 (빈 문자열 고정)
+SESSION_HOURS = "24"
+CHECK_MINUTES = "10"
+DEBUG = "0"          # "1" 이면 signin 응답 body 로그 (토큰은 가림)
+
+# Secret (사람이 등록): npx wrangler secret put SESSION_SECRET
