@@ -427,6 +427,11 @@ const PIBO_I18N = {
   '분': 'm ',
   '초': 's',
 
+  // ── 세션 (session.js) ──
+  '로그아웃': 'Log out',
+  '세션이 만료됐어요. 작업 내용을 저장한 뒤 다시 로그인하세요.': 'Your session has expired. Save your work, then sign in again.',
+  '다시 로그인': 'Sign in again',
+
   // ── 튜토리얼 (tour.js) ──
   '도움말': 'Help',
   '그만 볼래요': 'Skip',

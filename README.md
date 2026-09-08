@@ -12,7 +12,9 @@ https://pibo-lab.themaker.workers.dev/
 파이보 랩은 통합 계정으로 로그인해야 들어갈 수 있다. (Cloudflare Workers 배포와 PiboLab.exe 모두 동일)
 
 - 로그인 화면 `/login`, 로그아웃 `/logout`, 세션 확인 `/me`(JSON), 상태 `/healthz`
-- 세션 쿠키 `pibo_lab_session` — 24시간 유효(`SESSION_HOURS`), 10분마다 계정 재검증(`CHECK_MINUTES`)
+- 세션 쿠키 `pibo_lab_session` — 유휴 만료 2시간(`SESSION_HOURS`, 쓰는 동안은 연장), 10분마다 계정 재검증(`CHECK_MINUTES`)
+- 상단 바에 아이디와 로그아웃 버튼이 붙고, 탭이 열려 있는 동안 15분마다 `/me` 하트비트로 세션을 연장한다. 끊기면 배너로 안내(강제 이동 없음)
+- 인증 서버 토큰 수명(발급 시 정해짐)이 상한이라 그보다 길게는 유지되지 않는다
 - 로그인 화면의 언어 토글(EN/한)은 본편과 같은 `localStorage 'language'` 를 공유한다
 
 ### Cloudflare Workers
@@ -31,7 +33,7 @@ npx wrangler secret put SESSION_SECRET
 `v*` 태그 push 시 `.github/workflows/build-exe.yml` 이 빌드해 Releases 에 첨부한다. 실행 옵션:
 
 ```
-PiboLab.exe [-port 50030] [-secret ...] [-hours 24] [-check 10]
+PiboLab.exe [-port 50030] [-secret ...] [-hours 2] [-check 10]
             [-api https://api-intgr.circul.us/v1] [-client-id pibolab] [-unique ""] [-debug] [-no-open]
 ```
 
