@@ -7,6 +7,36 @@ PIBO 휴머노이드 로봇용 웹 URDF 시뮬레이터. 브라우저에서 URDF
 [Release]
 https://pibo-lab.themaker.workers.dev/
 
+## 계정 로그인
+
+파이보 랩은 통합 계정으로 로그인해야 들어갈 수 있다. (Cloudflare Workers 배포와 PiboLab.exe 모두 동일)
+
+- 로그인 화면 `/login`, 로그아웃 `/logout`, 세션 확인 `/me`(JSON), 상태 `/healthz`
+- 세션 쿠키 `pibo_lab_session` — 24시간 유효(`SESSION_HOURS`), 10분마다 계정 재검증(`CHECK_MINUTES`)
+- 로그인 화면의 언어 토글(EN/한)은 본편과 같은 `localStorage 'language'` 를 공유한다
+
+### Cloudflare Workers
+
+`src/index.js` 가 앞단 인증을 맡고, 정적 파일은 `[assets]` 로 서빙된다. 설정값은 `wrangler.toml` `[vars]` 참고.
+세션 서명 비밀키는 Secret 으로 한 번 등록해야 한다:
+
+```
+npx wrangler secret put SESSION_SECRET
+```
+
+배포 흐름: `main` → (테스트) → `release` 머지 → Cloudflare 자동 배포.
+
+### PiboLab.exe
+
+`v*` 태그 push 시 `.github/workflows/build-exe.yml` 이 빌드해 Releases 에 첨부한다. 실행 옵션:
+
+```
+PiboLab.exe [-port 50030] [-secret ...] [-hours 24] [-check 10]
+            [-api https://api-intgr.circul.us/v1] [-client-id pibolab] [-unique ""] [-debug] [-no-open]
+```
+
+`-secret` 을 주지 않으면 실행마다 랜덤 키를 쓰므로 exe 를 재시작하면 다시 로그인해야 한다.
+
 ## 기능
 
 - URDF + STL 업로드 후 3D 렌더링 (three.js, 별도 설치 불필요)
