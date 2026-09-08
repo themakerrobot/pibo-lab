@@ -232,6 +232,9 @@ const loginHTML = `<!doctype html>
 <title>파이보 랩 — 로그인</title>
 <link rel="stylesheet" href="/fonts/pretendard.css">
 <link rel="icon" type="image/png" href="/img/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#FBF7EF">
+<link rel="apple-touch-icon" href="/img/icon-192.png">
 <style>
   :root{
     --paper:#FBF7EF;--line-d:#4A3F2E;--pen-blue:#1F5F7A;--pen-blue-d:#12455C;--pen-red:#B4451C;
@@ -365,6 +368,10 @@ func main() {
 	// 로그인 화면이 쓰는 에셋(로고·캐릭터·폰트)은 세션 없이도 서빙 (사이트 embed 에 이미 포함)
 	mux.Handle("/img/", static)
 	mux.Handle("/fonts/", static)
+	mux.HandleFunc("/manifest.webmanifest", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/manifest+json")
+		static.ServeHTTP(w, r)
+	})
 
 	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

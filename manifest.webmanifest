@@ -1,0 +1,14 @@
+{
+  "name": "파이보 랩",
+  "short_name": "파이보 랩",
+  "description": "브라우저에서 PIBO 휴머노이드 로봇을 조작하고 블록 코딩·AI 분류·게임을 만들어 보는 수업용 웹앱",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "background_color": "#FBF7EF",
+  "theme_color": "#FBF7EF",
+  "icons": [
+    { "src": "/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
