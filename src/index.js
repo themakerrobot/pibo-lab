@@ -100,6 +100,9 @@ function loginPage(next, error) {
 <title>파이보 랩 — 로그인</title>
 <link rel="stylesheet" href="/fonts/pretendard.css">
 <link rel="icon" type="image/png" href="/img/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#FBF7EF">
+<link rel="apple-touch-icon" href="/img/icon-192.png">
 <style>
   :root{
     --paper:#FBF7EF;--line-d:#4A3F2E;--pen-blue:#1F5F7A;--pen-blue-d:#12455C;--pen-red:#B4451C;
@@ -205,7 +208,7 @@ export default {
 
     if (url.pathname === "/healthz") return new Response("ok");
     // 로그인 화면이 쓰는 에셋(로고·캐릭터·폰트)은 세션 없이도 서빙
-    if (url.pathname.startsWith("/img/") || url.pathname.startsWith("/fonts/")) return env.ASSETS.fetch(request);
+    if (url.pathname.startsWith("/img/") || url.pathname.startsWith("/fonts/") || url.pathname === "/manifest.webmanifest") return env.ASSETS.fetch(request);
 
     if (url.pathname === "/login") {
       if (request.method === "GET") return loginPage(safeNext(url.searchParams.get("next")), null);
